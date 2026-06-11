@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
+@theme {
+  --color-zinc-950: #050505;
+  --color-zinc-900: #0a0a0a;
+  --color-zinc-800: #141414;
+  --color-zinc-700: #1f1f1f;
+  
+  --color-orange-500: #FF5500;
+  --color-orange-600: #E64C00;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #050505;
+  --card-border: #1f1f1f;
+  --accent-orange: #FF5500;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: rgba(255, 85, 0, 0.3);
+  color: #ffffff;
+}
+
+/* Sharp UI Utilities */
+
+.sharp-border {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sharp-border-b {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sharp-border-t {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Minimalist Grid Pattern */
+.grid-bg-sharp {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+}
+
+/* Stark hover effects */
+.hover-sharp-orange {
+  transition: all 0.2s ease-out;
+}
+
+.hover-sharp-orange:hover {
+  border-color: var(--accent-orange);
+  background-color: rgba(255, 85, 0, 0.05);
+}
+
+/* Gradient Text (Monochrome/Sharp) */
+.gradient-text-mono {
+  background: linear-gradient(180deg, #ffffff 0%, #888888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Score Circle Visualizer */
+.score-circle {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hide scrollbars for aesthetic clarity */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f1f1f;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FF5500;
 }
