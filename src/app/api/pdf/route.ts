@@ -1,15 +1,19 @@
 /**
  * /api/pdf
  * Server-side PDF generation endpoint.
- * Accepts { report: AuditReport, analysis?: GeminiAnalysis } via POST.
+ *
+ * Single-site:    POST { report, analysis? }
+ * Comparison:     POST { comparison: true, reportA, reportB, geminiComparison? }
+ *
  * Returns a binary PDF file — no API keys are exposed to the client.
  */
 import React from 'react';
 import { NextRequest } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import type { DocumentProps } from '@react-pdf/renderer';
-import type { AuditReport, GeminiAnalysis } from '@/types/audit';
+import type { AuditReport, GeminiAnalysis, GeminiComparison } from '@/types/audit';
 import { AuditPdfDocument } from '@/lib/pdf/AuditPdfDocument';
+import { ComparisonPdfDocument } from '@/lib/pdf/ComparisonPdfDocument';
 
 // Explicitly use the Node.js runtime — required for @react-pdf/renderer
 export const runtime = 'nodejs';
@@ -27,33 +31,58 @@ function sanitizeFilename(url: string): string {
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest): Promise<Response> {
-  let report: AuditReport;
-  let analysis: GeminiAnalysis | undefined;
-
+  let body: any;
   try {
-    const body = await req.json();
-    report = body.report;
-    analysis = body.analysis ?? undefined;
+    body = await req.json();
   } catch {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (!report?.url || !report?.scores || !report?.metrics) {
-    return Response.json(
-      { error: 'Missing required fields: report.url, report.scores, report.metrics' },
-      { status: 400 }
-    );
-  }
-
   try {
-    const element = React.createElement(
-      AuditPdfDocument,
-      { report, analysis: analysis ?? null }
-    ) as React.ReactElement<DocumentProps>;
+    let element: React.ReactElement<DocumentProps>;
+    let filename: string;
+
+    // ── Comparison mode ───────────────────────────────────────────────────
+    if (body.comparison === true) {
+      const reportA: AuditReport = body.reportA;
+      const reportB: AuditReport = body.reportB;
+      const geminiComparison: GeminiComparison | undefined = body.geminiComparison ?? undefined;
+
+      if (!reportA?.url || !reportA?.scores || !reportB?.url || !reportB?.scores) {
+        return Response.json(
+          { error: 'Missing required fields: reportA and reportB with url, scores, metrics' },
+          { status: 400 }
+        );
+      }
+
+      element = React.createElement(
+        ComparisonPdfDocument,
+        { reportA, reportB, comparison: geminiComparison ?? null }
+      ) as React.ReactElement<DocumentProps>;
+
+      filename = `zekoaudit-compare-${sanitizeFilename(reportA.url)}-vs-${sanitizeFilename(reportB.url)}.pdf`;
+
+    // ── Single-site mode ──────────────────────────────────────────────────
+    } else {
+      const report: AuditReport = body.report;
+      const analysis: GeminiAnalysis | undefined = body.analysis ?? undefined;
+
+      if (!report?.url || !report?.scores || !report?.metrics) {
+        return Response.json(
+          { error: 'Missing required fields: report.url, report.scores, report.metrics' },
+          { status: 400 }
+        );
+      }
+
+      element = React.createElement(
+        AuditPdfDocument,
+        { report, analysis: analysis ?? null }
+      ) as React.ReactElement<DocumentProps>;
+
+      filename = `zekoaudit-${sanitizeFilename(report.url)}.pdf`;
+    }
 
     const pdfBuffer = await renderToBuffer(element);
-
-    const filename = `zekoaudit-${sanitizeFilename(report.url)}.pdf`;
 
     return new Response(new Uint8Array(pdfBuffer), {
       status: 200,
