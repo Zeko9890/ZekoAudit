@@ -135,7 +135,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         // Request JSON output explicitly
         responseMimeType: 'application/json',
         temperature: 0.3, // Low temperature for consistent, structured output
-        maxOutputTokens: 2048,
+        maxOutputTokens: 8192,
       },
     });
 

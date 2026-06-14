@@ -4,6 +4,9 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
+  Globe,
+  GitCompareArrows,
+  ArrowRight,
   ArrowLeft,
   RefreshCw,
   AlertTriangle,
@@ -326,17 +329,78 @@ function CompareContent() {
     }
   }, [reportA, reportB, geminiForPdf, pdfLoading, rawA, rawB]);
 
-  // Missing parameters
+  const [inputA, setInputA] = useState(rawA);
+  const [inputB, setInputB] = useState(rawB);
+  const [formError, setFormError] = useState('');
+
+  const handleCompareSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const a = inputA.trim();
+    const b = inputB.trim();
+    if (!a || !b) {
+      setFormError('Please enter both website URLs');
+      return;
+    }
+    if (a.toLowerCase() === b.toLowerCase()) {
+      setFormError('Please enter two different URLs');
+      return;
+    }
+    router.push(`/compare?a=${encodeURIComponent(a.toLowerCase())}&b=${encodeURIComponent(b.toLowerCase())}`);
+  };
+
+  // Missing parameters - show form instead of error
   if (!rawA || !rawB) {
     return (
       <div className="flex flex-col flex-grow items-center justify-center px-4 py-24 bg-black min-h-[70vh]">
-        <div className="max-w-xl w-full p-8 border border-[#FF5500]/50 bg-black">
-          <AlertTriangle className="h-8 w-8 text-[#FF5500] mb-4" />
-          <h2 className="text-lg font-bold text-white uppercase tracking-widest mb-2">Missing URLs</h2>
-          <p className="text-xs text-zinc-400 font-mono mb-6">Both website URLs are required for comparison.</p>
-          <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF5500] text-xs font-mono text-white uppercase">
-            <ArrowLeft className="h-3 w-3" /> Back to Home
-          </Link>
+        <div className="max-w-xl w-full p-8 border border-white/20 bg-black">
+          <GitCompareArrows className="h-8 w-8 text-[#FF5500] mb-4" />
+          <h2 className="text-xl font-bold text-white uppercase tracking-widest mb-2">Compare Websites</h2>
+          <p className="text-xs text-zinc-400 font-mono mb-8">Enter two URLs to run a side-by-side performance audit.</p>
+          
+          <form onSubmit={handleCompareSubmit} className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-12 flex-shrink-0">Site A</span>
+                <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+                  <Globe className="h-5 w-5 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={inputA}
+                    onChange={(e) => { setInputA(e.target.value); if (formError) setFormError(''); }}
+                    placeholder="First URL (e.g., stripe.com)"
+                    className="w-full bg-transparent py-3 text-white placeholder-zinc-600 focus:outline-none text-sm font-mono"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-12 flex-shrink-0">Site B</span>
+                <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+                  <Globe className="h-5 w-5 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={inputB}
+                    onChange={(e) => { setInputB(e.target.value); if (formError) setFormError(''); }}
+                    placeholder="Second URL (e.g., linear.app)"
+                    className="w-full bg-transparent py-3 text-white placeholder-zinc-600 focus:outline-none text-sm font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm mt-4"
+            >
+              Compare
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            
+            {formError && (
+              <p className="mt-3 text-sm text-[#FF5500] text-left font-mono flex items-center gap-2">
+                <span className="h-1 w-1 bg-[#FF5500]"></span> {formError}
+              </p>
+            )}
+          </form>
         </div>
       </div>
     );
