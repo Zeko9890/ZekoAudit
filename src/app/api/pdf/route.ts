@@ -31,7 +31,7 @@ function sanitizeFilename(url: string): string {
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest): Promise<Response> {
-  let body: any;
+  let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
@@ -44,9 +44,9 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     // ── Comparison mode ───────────────────────────────────────────────────
     if (body.comparison === true) {
-      const reportA: AuditReport = body.reportA;
-      const reportB: AuditReport = body.reportB;
-      const geminiComparison: GeminiComparison | undefined = body.geminiComparison ?? undefined;
+      const reportA = body.reportA as AuditReport;
+      const reportB = body.reportB as AuditReport;
+      const geminiComparison = (body.geminiComparison as GeminiComparison | undefined) ?? undefined;
 
       if (!reportA?.url || !reportA?.scores || !reportB?.url || !reportB?.scores) {
         return Response.json(
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     // ── Single-site mode ──────────────────────────────────────────────────
     } else {
-      const report: AuditReport = body.report;
-      const analysis: GeminiAnalysis | undefined = body.analysis ?? undefined;
+      const report = body.report as AuditReport;
+      const analysis = (body.analysis as GeminiAnalysis | undefined) ?? undefined;
 
       if (!report?.url || !report?.scores || !report?.metrics) {
         return Response.json(
@@ -92,12 +92,13 @@ export async function POST(req: NextRequest): Promise<Response> {
         'Cache-Control': 'no-store',
       },
     });
-  } catch (err: any) {
-    console.error('[api/pdf] PDF generation error:', err?.message);
+  } catch (err: unknown) {
+    const errorObj = err as { message?: string };
+    console.error('[api/pdf] PDF generation error:', errorObj?.message);
     return Response.json(
       {
         error: 'PDF Generation Failed',
-        details: err?.message ?? 'An unexpected error occurred while generating the PDF.',
+        details: errorObj?.message ?? 'An unexpected error occurred while generating the PDF.',
       },
       { status: 500 }
     );

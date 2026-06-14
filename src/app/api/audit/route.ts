@@ -62,7 +62,7 @@ function normalizeAndValidateUrl(raw: string): { url: string; error: string | nu
 
 // ---------------------------------------------------------------------------
 // Map raw PageSpeed / Lighthouse JSON → our AuditReport shape
-// ---------------------------------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapLighthouseResponse(targetUrl: string, data: any) {
   const getCategoryScore = (catId: string): number => {
     const cat = data.lighthouseResult?.categories?.[catId];
@@ -116,7 +116,7 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
     { id: 'deprecations', category: 'best-practices', defaultTitle: 'Uses deprecated APIs' },
   ];
 
-  const recommendations: any[] = [];
+  const recommendations: { id: string; title: string; description: string; impact: string; category: string; solution: string; improvement: string }[] = [];
   const auditItems = data.lighthouseResult?.audits || {};
 
   auditsToMap.forEach((item) => {
@@ -265,10 +265,11 @@ async function handleAudit(url: string | null): Promise<NextResponse> {
         'Cache-Control': 'no-store, max-age=0',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
 
-    if (error.name === 'AbortError') {
+    const err = error as { name?: string; message?: string };
+    if (err.name === 'AbortError') {
       return NextResponse.json(
         {
           error: 'Analysis Timeout',
@@ -282,7 +283,7 @@ async function handleAudit(url: string | null): Promise<NextResponse> {
     return NextResponse.json(
       {
         error: 'Network Error',
-        details: error.message || 'Could not reach the PageSpeed API service.',
+        details: err.message || 'Could not reach the PageSpeed API service.',
       },
       { status: 502 }
     );

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, ArrowRight } from 'lucide-react';
+import { ShieldCheck, ArrowRight, GitCompareArrows } from 'lucide-react';
 
 export default function Header() {
   return (
@@ -18,26 +18,23 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Nav Links */}
         <nav className="hidden md:flex space-x-8 text-sm font-medium text-zinc-400">
-          <Link href="#features" className="hover:text-white transition-colors">
+          <Link href="/#features" className="hover:text-white transition-colors">
             Features
           </Link>
-          <Link href="#examples" className="hover:text-white transition-colors">
+          <Link href="/#examples" className="hover:text-white transition-colors">
             Examples
           </Link>
-          <Link href="https://nextjs.org/docs" target="_blank" className="hover:text-white transition-colors">
-            Docs
-          </Link>
-          <Link href="#" className="hover:text-white transition-colors">
-            Pricing
+          <Link href="/compare" className="hover:text-white transition-colors flex items-center gap-1.5">
+            <GitCompareArrows className="h-3.5 w-3.5" />
+            Compare
           </Link>
         </nav>
 
         {/* CTA Button */}
         <div className="flex items-center space-x-4">
           <Link 
-            href="#analyze" 
+            href="/#analyze" 
             className="group relative inline-flex items-center justify-center rounded-sm bg-[#FF5500] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#E64C00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5500]"
           >
             Start Auditing

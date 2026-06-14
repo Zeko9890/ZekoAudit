@@ -11,7 +11,6 @@ import {
   Zap,
   Search,
   Accessibility,
-  Gauge,
   AlertTriangle,
   Sparkles,
   ChevronDown,
@@ -78,9 +77,9 @@ function GeminiSection({
           setLoading(false);
           onAnalysisReady?.(data);
         }
-      } catch (e: any) {
+      } catch {
         if (!cancelled) {
-          setError(e.message ?? 'Unknown error contacting Gemini.');
+          setError('AI recommendations are temporarily unavailable.');
           setLoading(false);
         }
       }
@@ -306,6 +305,9 @@ function AuditResultsContent() {
   const [error, setError] = useState<{ message: string; details?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'high' | 'medium' | 'passed'>('all');
   const [expandedRecId, setExpandedRecId] = useState<string | null>(null);
+  const [geminiAnalysisForPdf, setGeminiAnalysisForPdf] = useState<GeminiAnalysis | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const loadingSteps = [
     { text: '> INIT SECURE HANDSHAKE...', time: '0.12s' },
@@ -317,22 +319,23 @@ function AuditResultsContent() {
   ];
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    setLoadingStep(0);
-    setReport(null);
-
     const abortController = new AbortController();
+    let stepInterval: NodeJS.Timeout;
 
-    let currentStep = 0;
-    const stepInterval = setInterval(() => {
-      if (currentStep < 4) {
-        currentStep += 1;
-        setLoadingStep(currentStep);
-      }
-    }, 800);
+    const runInit = async () => {
+      setLoading(true);
+      setError(null);
+      setLoadingStep(0);
+      setReport(null);
 
-    const runFetch = async () => {
+      let currentStep = 0;
+      stepInterval = setInterval(() => {
+        if (currentStep < 4) {
+          currentStep += 1;
+          setLoadingStep(currentStep);
+        }
+      }, 400);
+
       try {
         const response = await fetch(`/api/audit?url=${encodeURIComponent(rawUrl)}`, {
           signal: abortController.signal,
@@ -354,36 +357,26 @@ function AuditResultsContent() {
         clearInterval(stepInterval);
         setLoadingStep(5);
 
-        setTimeout(() => {
-          setReport(data);
-          setLoading(false);
-        }, 400);
-      } catch (err: any) {
-        if (err.name === 'AbortError') return;
+        setReport(data);
+        setLoading(false);
+      } catch (err: unknown) {
+        if ((err as Error)?.name === 'AbortError') return;
 
         clearInterval(stepInterval);
 
-        let errMessage = 'Failed to analyze website';
-        let errDetails = 'An unexpected error occurred. Please verify your internet connection.';
-
-        try {
-          const parsedError = JSON.parse(err.message);
-          errMessage = parsedError.message;
-          errDetails = parsedError.details;
-        } catch {
-          if (err.message) errMessage = err.message;
-        }
-
-        setError({ message: errMessage, details: errDetails });
+        setError({ 
+          message: 'Analysis failed. Please try again.', 
+          details: 'We were unable to complete the audit. Please check the URL and try again.' 
+        });
         setLoading(false);
       }
     };
 
-    runFetch();
+    runInit();
 
     return () => {
-      clearInterval(stepInterval);
       abortController.abort();
+      if (stepInterval) clearInterval(stepInterval);
     };
   }, [rawUrl, searchParams]);
 
@@ -501,30 +494,10 @@ function AuditResultsContent() {
     }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'performance':
-        return <Zap className="h-4 w-4" />;
-      case 'seo':
-        return <Search className="h-4 w-4" />;
-      case 'accessibility':
-        return <Accessibility className="h-4 w-4" />;
-      case 'bestPractices':
-        return <ShieldCheck className="h-4 w-4" />;
-      default:
-        return <Gauge className="h-4 w-4" />;
-    }
-  };
-
   const filteredRecs = report.recommendations.filter((rec) => {
     if (activeTab === 'all') return true;
     return rec.impact === activeTab;
   });
-
-  // Track the Gemini analysis produced by GeminiSection so we can bundle it into the PDF
-  const [geminiAnalysisForPdf, setGeminiAnalysisForPdf] = useState<GeminiAnalysis | null>(null);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const handleExportPdf = async () => {
     if (!report || pdfLoading) return;
@@ -549,8 +522,8 @@ function AuditResultsContent() {
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(objectUrl);
-    } catch (e: any) {
-      setPdfError(e.message ?? 'PDF export failed.');
+    } catch {
+      setPdfError('Failed to generate PDF. Please try again later.');
     } finally {
       setPdfLoading(false);
     }
@@ -770,7 +743,7 @@ function AuditResultsContent() {
             </p>
           </div>
           <div className="flex mt-4 md:mt-0 font-mono text-[10px] border border-white/20 bg-black">
-            {(['all', 'high', 'medium', 'passed'] as const).map((tab, i, arr) => (
+            {(['all', 'high', 'medium', 'passed'] as const).map((tab, i) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}

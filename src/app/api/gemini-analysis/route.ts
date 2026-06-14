@@ -167,14 +167,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         'Cache-Control': 'private, max-age=600',
       },
     });
-  } catch (err: any) {
-    console.error('[gemini-analysis] Gemini API error:', err?.message);
+  } catch (err: unknown) {
+    const errorObj = err as { status?: number; message?: string };
+    console.error('[gemini-analysis] Gemini API error:', errorObj?.message);
 
-    const status = err?.status === 429 ? 429 : 502;
+    const status = errorObj?.status === 429 ? 429 : 502;
     return NextResponse.json(
       {
-        error: err?.status === 429 ? 'Rate Limit Exceeded' : 'Gemini API Error',
-        details: err?.message ?? 'An unexpected error occurred calling Gemini.',
+        error: errorObj?.status === 429 ? 'Rate Limit Exceeded' : 'Gemini API Error',
+        details: errorObj?.message ?? 'An unexpected error occurred calling Gemini.',
       },
       { status }
     );

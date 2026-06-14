@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { 
   Globe, 
   ArrowRight, 
@@ -10,7 +9,8 @@ import {
   Eye, 
   Shield,
   SearchCode,
-  Accessibility
+  Accessibility,
+  GitCompareArrows,
 } from 'lucide-react';
 
 // Static reference cards — these trigger a real live audit when clicked.
@@ -41,7 +41,9 @@ const REFERENCE_SITES = [
 
 export default function Home() {
   const [url, setUrl] = useState('');
+  const [urlB, setUrlB] = useState('');
   const [error, setError] = useState('');
+  const [mode, setMode] = useState<'single' | 'compare'>('single');
   const router = useRouter();
 
   const handleAnalyze = (e: React.FormEvent) => {
@@ -52,6 +54,21 @@ export default function Home() {
       return;
     }
     router.push(`/audit?url=${encodeURIComponent(trimmed.toLowerCase())}`);
+  };
+
+  const handleCompare = (e: React.FormEvent) => {
+    e.preventDefault();
+    const a = url.trim();
+    const b = urlB.trim();
+    if (!a || !b) {
+      setError('Please enter both website URLs');
+      return;
+    }
+    if (a.toLowerCase() === b.toLowerCase()) {
+      setError('Please enter two different URLs');
+      return;
+    }
+    router.push(`/compare?a=${encodeURIComponent(a.toLowerCase())}&b=${encodeURIComponent(b.toLowerCase())}`);
   };
 
   const handleQuickAudit = (target: string) => {
@@ -81,54 +98,134 @@ export default function Home() {
           Professional audits powered by Google PageSpeed Insights. Deep insights into indexing, performance bottlenecks, WCAG compliance, and architectural best practices.
         </p>
 
-        {/* URL Input Form */}
-        <form onSubmit={handleAnalyze} className="mt-12 max-w-2xl mx-auto">
-          <div className="flex flex-col sm:flex-row shadow-2xl transition-all duration-300 group">
-            <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 group-focus-within:border-[#FF5500] transition-colors">
-              <Globe className="h-5 w-5 text-zinc-500 group-focus-within:text-[#FF5500] transition-colors" />
-              <input
-                id="url-input"
-                type="text"
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  if (error) setError('');
-                }}
-                placeholder="Target URL (e.g., stripe.com)"
-                className="w-full bg-transparent py-4 text-white placeholder-zinc-600 focus:outline-none text-base font-mono"
-                aria-label="Website URL to audit"
-              />
-            </div>
+        {/* Mode Toggle */}
+        <div className="mt-12 flex justify-center">
+          <div className="inline-flex border border-white/20">
             <button
-              id="analyze-button"
-              type="submit"
-              className="flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm mt-2 sm:mt-0"
+              onClick={() => { setMode('single'); setError(''); }}
+              className={`px-5 py-2 text-xs font-mono uppercase tracking-widest transition-colors ${
+                mode === 'single'
+                  ? 'bg-[#FF5500] text-white'
+                  : 'bg-black text-zinc-500 hover:text-white'
+              }`}
             >
-              Analyze
-              <ArrowRight className="h-4 w-4" />
+              Single Audit
+            </button>
+            <button
+              onClick={() => { setMode('compare'); setError(''); }}
+              className={`px-5 py-2 text-xs font-mono uppercase tracking-widest transition-colors flex items-center gap-2 ${
+                mode === 'compare'
+                  ? 'bg-[#FF5500] text-white'
+                  : 'bg-black text-zinc-500 hover:text-white'
+              }`}
+            >
+              <GitCompareArrows className="h-3.5 w-3.5" />
+              Compare
             </button>
           </div>
-          {error && (
-            <p className="mt-3 text-sm text-[#FF5500] text-left font-mono flex items-center gap-2">
-              <span className="h-1 w-1 bg-[#FF5500]"></span> {error}
-            </p>
-          )}
-        </form>
+        </div>
+
+        {/* Single URL Input */}
+        {mode === 'single' && (
+          <form onSubmit={handleAnalyze} className="mt-8 max-w-2xl mx-auto">
+            <div className="flex flex-col sm:flex-row shadow-2xl transition-all duration-300 group">
+              <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 group-focus-within:border-[#FF5500] transition-colors">
+                <Globe className="h-5 w-5 text-zinc-500 group-focus-within:text-[#FF5500] transition-colors" />
+                <input
+                  id="url-input"
+                  type="text"
+                  value={url}
+                  onChange={(e) => {
+                    setUrl(e.target.value);
+                    if (error) setError('');
+                  }}
+                  placeholder="Target URL (e.g., stripe.com)"
+                  className="w-full bg-transparent py-4 text-white placeholder-zinc-600 focus:outline-none text-base font-mono"
+                  aria-label="Website URL to audit"
+                />
+              </div>
+              <button
+                id="analyze-button"
+                type="submit"
+                className="flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm mt-2 sm:mt-0"
+              >
+                Analyze
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+            {error && (
+              <p className="mt-3 text-sm text-[#FF5500] text-left font-mono flex items-center gap-2">
+                <span className="h-1 w-1 bg-[#FF5500]"></span> {error}
+              </p>
+            )}
+          </form>
+        )}
+
+        {/* Compare URL Inputs */}
+        {mode === 'compare' && (
+          <form onSubmit={handleCompare} className="mt-8 max-w-2xl mx-auto">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-12 flex-shrink-0">Site A</span>
+                <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+                  <Globe className="h-5 w-5 text-zinc-500" />
+                  <input
+                    id="url-input-a"
+                    type="text"
+                    value={url}
+                    onChange={(e) => { setUrl(e.target.value); if (error) setError(''); }}
+                    placeholder="First URL (e.g., stripe.com)"
+                    className="w-full bg-transparent py-3 text-white placeholder-zinc-600 focus:outline-none text-sm font-mono"
+                    aria-label="Website A URL"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-12 flex-shrink-0">Site B</span>
+                <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+                  <Globe className="h-5 w-5 text-zinc-500" />
+                  <input
+                    id="url-input-b"
+                    type="text"
+                    value={urlB}
+                    onChange={(e) => { setUrlB(e.target.value); if (error) setError(''); }}
+                    placeholder="Second URL (e.g., linear.app)"
+                    className="w-full bg-transparent py-3 text-white placeholder-zinc-600 focus:outline-none text-sm font-mono"
+                    aria-label="Website B URL"
+                  />
+                </div>
+              </div>
+            </div>
+            <button
+              id="compare-button"
+              type="submit"
+              className="w-full mt-4 flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm"
+            >
+              <GitCompareArrows className="h-4 w-4" />
+              Compare Websites
+            </button>
+            {error && (
+              <p className="mt-3 text-sm text-[#FF5500] text-left font-mono flex items-center gap-2">
+                <span className="h-1 w-1 bg-[#FF5500]"></span> {error}
+              </p>
+            )}
+          </form>
+        )}
 
         <p className="mt-6 text-xs text-zinc-500 font-mono">
           TRY:{' '}
           <button
-            onClick={() => setUrl('stripe.com')}
+            onClick={() => { setUrl('stripe.com'); setMode('single'); }}
             className="text-white hover:text-[#FF5500] transition-colors"
           >
             STRIPE.COM
           </button>{' '}
           OR{' '}
           <button
-            onClick={() => setUrl('linear.app')}
+            onClick={() => { setUrl('stripe.com'); setUrlB('linear.app'); setMode('compare'); }}
             className="text-white hover:text-[#FF5500] transition-colors"
           >
-            LINEAR.APP
+            COMPARE STRIPE vs LINEAR
           </button>
         </p>
       </section>
