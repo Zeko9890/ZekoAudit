@@ -297,7 +297,7 @@ function GeminiSection({
 function AuditResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const rawUrl = searchParams.get('url') || 'stripe.com';
+  const rawUrl = searchParams.get('url') || '';
 
   const [loading, setLoading] = useState(true);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -309,6 +309,9 @@ function AuditResultsContent() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
+  const [inputUrl, setInputUrl] = useState('');
+  const [formError, setFormError] = useState('');
+
   const loadingSteps = [
     { text: '> INIT SECURE HANDSHAKE...', time: '0.12s' },
     { text: '> CRAWLING DOM NODES...', time: '0.45s' },
@@ -319,6 +322,8 @@ function AuditResultsContent() {
   ];
 
   useEffect(() => {
+    if (!rawUrl) return;
+
     const abortController = new AbortController();
     let stepInterval: NodeJS.Timeout;
 
@@ -379,6 +384,54 @@ function AuditResultsContent() {
       if (stepInterval) clearInterval(stepInterval);
     };
   }, [rawUrl, searchParams]);
+
+  const handleAuditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = inputUrl.trim();
+    if (!url) {
+      setFormError('Please enter a website URL');
+      return;
+    }
+    router.push(`/audit?url=${encodeURIComponent(url.toLowerCase())}`);
+  };
+
+  if (!rawUrl) {
+    return (
+      <div className="flex flex-col flex-grow items-center justify-center px-4 py-24 bg-black min-h-[70vh]">
+        <div className="max-w-xl w-full p-8 border border-white/20 bg-black">
+          <Sparkles className="h-8 w-8 text-[#FF5500] mb-4" />
+          <h2 className="text-xl font-bold text-white uppercase tracking-widest mb-2">Run Audit</h2>
+          <p className="text-xs text-zinc-400 font-mono mb-8">Enter a URL to run a comprehensive performance audit.</p>
+          
+          <form onSubmit={handleAuditSubmit} className="space-y-4">
+            <div className="flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-8 flex-shrink-0">URL</span>
+              <input
+                type="text"
+                value={inputUrl}
+                onChange={(e) => { setInputUrl(e.target.value); if (formError) setFormError(''); }}
+                placeholder="Target URL (e.g., stripe.com)"
+                className="w-full bg-transparent py-3 text-white placeholder-zinc-600 focus:outline-none text-sm font-mono"
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm mt-4"
+            >
+              Start Analysis
+            </button>
+            
+            {formError && (
+              <p className="mt-3 text-sm text-[#FF5500] text-left font-mono flex items-center gap-2">
+                <span className="h-1 w-1 bg-[#FF5500]"></span> {formError}
+              </p>
+            )}
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   // Error state
   if (error) {
@@ -464,11 +517,16 @@ function AuditResultsContent() {
     );
   }
 
-  // Helpers
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-white';
-    if (score >= 50) return 'text-zinc-400';
-    return 'text-[#FF5500]';
+    if (score >= 90) return 'text-[#22c55e]'; // Green
+    if (score >= 50) return 'text-[#f97316]'; // Orange
+    return 'text-[#ef4444]'; // Red
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 90) return 'OPTIMAL';
+    if (score >= 50) return 'NEEDS WORK';
+    return 'CRITICAL';
   };
 
   const getImpactBadge = (impact: 'high' | 'medium' | 'passed') => {
@@ -600,14 +658,14 @@ function AuditResultsContent() {
             <div
               className={`px-4 py-1 border text-[10px] font-mono uppercase tracking-widest ${
                 report.overallScore >= 90
-                  ? 'border-white text-white'
+                  ? 'border-[#22c55e] text-[#22c55e]'
                   : report.overallScore >= 50
-                  ? 'border-zinc-500 text-zinc-400'
-                  : 'border-[#FF5500] text-[#FF5500]'
+                  ? 'border-[#f97316] text-[#f97316]'
+                  : 'border-[#ef4444] text-[#ef4444]'
               }`}
             >
               {report.overallScore >= 90
-                ? 'OPTIMIZED'
+                ? 'EXCELLENT'
                 : report.overallScore >= 75
                 ? 'GOOD'
                 : report.overallScore >= 50
@@ -619,60 +677,75 @@ function AuditResultsContent() {
 
         {/* Four pillars */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-0 bg-black">
-          <div className="p-6 md:p-8 border-b border-r border-white/20 flex flex-col justify-between hover-sharp-orange">
-            <div className="flex justify-between items-start">
-              <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
+          {/* Performance */}
+          <div className="p-6 md:p-8 border-b border-r border-white/20 flex flex-col justify-between hover:bg-white/5 transition-colors">
+            <div className="flex justify-between items-start mb-6">
+              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Performance
               </h4>
-              <Zap className="h-4 w-4 text-white" />
+              <Zap className={`h-4 w-4 ${getScoreColor(report.scores.performance)}`} />
             </div>
-            <div className="flex items-baseline gap-2 mt-8">
-              <span className={`text-5xl font-black ${getScoreColor(report.scores.performance)}`}>
+            <div>
+              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.performance)}`}>
                 {report.scores.performance}
               </span>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
+                {getScoreLabel(report.scores.performance)}
+              </p>
             </div>
           </div>
-          <div className="p-6 md:p-8 border-b border-white/20 flex flex-col justify-between hover-sharp-orange">
-            <div className="flex justify-between items-start">
-              <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
+          
+          {/* SEO */}
+          <div className="p-6 md:p-8 border-b border-white/20 flex flex-col justify-between hover:bg-white/5 transition-colors">
+            <div className="flex justify-between items-start mb-6">
+              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Search Engine
               </h4>
-              <Search className="h-4 w-4 text-white" />
+              <Search className={`h-4 w-4 ${getScoreColor(report.scores.seo)}`} />
             </div>
-            <div className="flex items-baseline gap-2 mt-8">
-              <span className={`text-5xl font-black ${getScoreColor(report.scores.seo)}`}>
+            <div>
+              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.seo)}`}>
                 {report.scores.seo}
               </span>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
+                {getScoreLabel(report.scores.seo)}
+              </p>
             </div>
           </div>
-          <div className="p-6 md:p-8 border-r border-white/20 flex flex-col justify-between hover-sharp-orange">
-            <div className="flex justify-between items-start">
-              <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
+
+          {/* Accessibility */}
+          <div className="p-6 md:p-8 border-r border-white/20 flex flex-col justify-between hover:bg-white/5 transition-colors">
+            <div className="flex justify-between items-start mb-6">
+              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Accessibility
               </h4>
-              <Accessibility className="h-4 w-4 text-white" />
+              <Accessibility className={`h-4 w-4 ${getScoreColor(report.scores.accessibility)}`} />
             </div>
-            <div className="flex items-baseline gap-2 mt-8">
-              <span
-                className={`text-5xl font-black ${getScoreColor(report.scores.accessibility)}`}
-              >
+            <div>
+              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.accessibility)}`}>
                 {report.scores.accessibility}
               </span>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
+                {getScoreLabel(report.scores.accessibility)}
+              </p>
             </div>
           </div>
-          <div className="p-6 md:p-8 flex flex-col justify-between hover-sharp-orange">
-            <div className="flex justify-between items-start">
-              <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">
+
+          {/* Best Practices */}
+          <div className="p-6 md:p-8 flex flex-col justify-between hover:bg-white/5 transition-colors">
+            <div className="flex justify-between items-start mb-6">
+              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Best Practices
               </h4>
-              <ShieldCheck className="h-4 w-4 text-white" />
+              <ShieldCheck className={`h-4 w-4 ${getScoreColor(report.scores.bestPractices)}`} />
             </div>
-            <div className="flex items-baseline gap-2 mt-8">
-              <span
-                className={`text-5xl font-black ${getScoreColor(report.scores.bestPractices)}`}
-              >
+            <div>
+              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.bestPractices)}`}>
                 {report.scores.bestPractices}
               </span>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
+                {getScoreLabel(report.scores.bestPractices)}
+              </p>
             </div>
           </div>
         </div>
@@ -705,7 +778,7 @@ function AuditResultsContent() {
                 <div className="w-full sm:w-1/3 flex justify-start sm:justify-center mb-2 sm:mb-0">
                   <span
                     className={`text-xl font-mono font-bold ${
-                      metric.status === 'poor' ? 'text-[#FF5500]' : 'text-white'
+                      metric.status === 'poor' ? 'text-[#ef4444]' : metric.status === 'average' ? 'text-[#f97316]' : 'text-[#22c55e]'
                     }`}
                   >
                     {metric.value}
@@ -715,8 +788,10 @@ function AuditResultsContent() {
                   <span
                     className={`text-xs font-mono uppercase px-2 py-0.5 border ${
                       metric.status === 'poor'
-                        ? 'border-[#FF5500] text-[#FF5500]'
-                        : 'border-zinc-500 text-zinc-400'
+                        ? 'border-[#ef4444] text-[#ef4444]'
+                        : metric.status === 'average'
+                        ? 'border-[#f97316] text-[#f97316]'
+                        : 'border-[#22c55e] text-[#22c55e]'
                     }`}
                   >
                     Score: {metric.score}
@@ -790,7 +865,13 @@ function AuditResultsContent() {
                 >
                   <div
                     onClick={() => setExpandedRecId(isExpanded ? null : rec.id)}
-                    className="p-4 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
+                    className={`p-4 sm:p-6 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors border-l-4 ${
+                      rec.impact === 'high'
+                        ? 'border-l-[#ef4444]'
+                        : rec.impact === 'medium'
+                        ? 'border-l-[#f97316]'
+                        : 'border-l-[#22c55e]'
+                    }`}
                   >
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       {getImpactBadge(rec.impact)}
@@ -800,10 +881,10 @@ function AuditResultsContent() {
                     </div>
                     <div className="flex items-center gap-6">
                       <span
-                        className={`text-[10px] font-mono hidden md:block ${
-                          rec.impact === 'passed' ? 'text-zinc-500' : 'text-[#FF5500]'
-                        }`}
-                      >
+                    className={`text-[10px] font-mono hidden md:block ${
+                      rec.impact === 'passed' ? 'text-zinc-500' : rec.impact === 'high' ? 'text-red-500' : 'text-orange-500'
+                    }`}
+                  >
                         {rec.improvement}
                       </span>
                       <span className="font-mono text-zinc-500 text-lg">

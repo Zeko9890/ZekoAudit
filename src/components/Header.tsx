@@ -27,14 +27,14 @@ export default function Header() {
           </Link>
           <Link href="/compare" className="hover:text-white transition-colors flex items-center gap-1.5">
             <GitCompareArrows className="h-3.5 w-3.5" />
-            Compare
+            Compare Websites
           </Link>
         </nav>
 
         {/* CTA Button */}
         <div className="flex items-center space-x-4">
           <Link 
-            href="/#analyze" 
+            href="/audit" 
             className="group relative inline-flex items-center justify-center rounded-sm bg-[#FF5500] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#E64C00] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5500]"
           >
             Start Auditing

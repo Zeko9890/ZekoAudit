@@ -81,12 +81,15 @@ function extractJson(raw: string): string {
 // Route handler
 // ---------------------------------------------------------------------------
 
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
+    console.error('[gemini-comparison] Missing GEMINI_API_KEY');
     return NextResponse.json(
-      { error: 'Gemini API key not configured', details: 'Set GEMINI_API_KEY in .env.local' },
+      { error: 'AI analysis is not configured.' },
       { status: 503 }
     );
   }
@@ -111,48 +114,81 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const ai = new GoogleGenAI({ apiKey });
   const prompt = buildComparisonPrompt(reportA, reportB);
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        temperature: 0.3,
-        maxOutputTokens: 8192,
-      },
-    });
+  let attempt = 0;
+  const maxRetries = 2; // Total 3 attempts
 
-    const rawText = response.text ?? '';
-    const jsonString = extractJson(rawText);
-
-    let comparison: GeminiComparison;
+  while (attempt <= maxRetries) {
     try {
-      comparison = JSON.parse(jsonString);
-    } catch {
-      console.error('[gemini-comparison] Failed to parse JSON:', jsonString.slice(0, 500));
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.3,
+          maxOutputTokens: 8192,
+        },
+      });
+
+      const rawText = response.text ?? '';
+      const jsonString = extractJson(rawText);
+
+      let comparison: GeminiComparison;
+      try {
+        comparison = JSON.parse(jsonString);
+      } catch (parseErr) {
+        console.error(`[gemini-comparison] Failed to parse JSON on attempt ${attempt + 1}:`, jsonString.slice(0, 500));
+        return NextResponse.json(
+          { error: 'AI analysis returned an invalid response. Please try again.' },
+          { status: 502 }
+        );
+      }
+
+      if (!comparison.generatedAt) {
+        comparison.generatedAt = new Date().toISOString();
+      }
+
+      return NextResponse.json(comparison, {
+        headers: { 'Cache-Control': 'private, max-age=600' },
+      });
+    } catch (err: unknown) {
+      const errorObj = err as { status?: number; message?: string };
+      console.error(`[gemini-comparison] API Error on attempt ${attempt + 1}:`, errorObj?.message || String(err));
+
+      const isRateLimit = errorObj?.status === 429;
+      const isTimeout = errorObj?.status === 504 || errorObj?.message?.toLowerCase().includes('timeout');
+      const isServerError = errorObj?.status && errorObj.status >= 500;
+
+      if (attempt < maxRetries && (isRateLimit || isTimeout || isServerError)) {
+        attempt++;
+        const backoff = isRateLimit ? 2000 * attempt : 1000 * attempt;
+        console.log(`[gemini-comparison] Retrying in ${backoff}ms...`);
+        await delay(backoff);
+        continue;
+      }
+
+      if (isRateLimit) {
+        return NextResponse.json(
+          { error: 'AI analysis is temporarily busy. Please try again in a minute.' },
+          { status: 429 }
+        );
+      }
+      
+      if (isTimeout) {
+        return NextResponse.json(
+          { error: 'AI analysis took too long to respond.' },
+          { status: 504 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Parse Error', details: 'Gemini returned unparseable JSON.' },
+        { error: 'AI analysis encountered an unexpected error.' },
         { status: 502 }
       );
     }
-
-    if (!comparison.generatedAt) {
-      comparison.generatedAt = new Date().toISOString();
-    }
-
-    return NextResponse.json(comparison, {
-      headers: { 'Cache-Control': 'private, max-age=600' },
-    });
-  } catch (err: unknown) {
-    const errorObj = err as { status?: number; message?: string };
-    console.error('[gemini-comparison] API Error:', errorObj?.message);
-    const status = errorObj?.status === 429 ? 429 : 502;
-    return NextResponse.json(
-      {
-        error: errorObj?.status === 429 ? 'Rate Limit Exceeded' : 'Gemini API Error',
-        details: errorObj?.message ?? 'An unexpected error occurred calling Gemini.',
-      },
-      { status }
-    );
   }
+
+  return NextResponse.json(
+    { error: 'AI analysis encountered an unexpected error.' },
+    { status: 502 }
+  );
 }

@@ -147,23 +147,23 @@ function GeminiComparisonSection({
 
       {/* Strengths columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="border border-white/20 p-6 bg-black">
-          <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-4">{reportA.url} Strengths</h3>
+        <div className="border border-[#22c55e]/20 p-6 bg-[#22c55e]/5 hover:bg-[#22c55e]/10 transition-colors">
+          <h3 className="text-[10px] font-mono text-[#22c55e] uppercase tracking-widest mb-4">{reportA.url} Strengths</h3>
           <ul className="space-y-3">
             {comparison.siteAStrengths.map((s, i) => (
               <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-300 leading-relaxed">
-                <CheckCircle2 className="h-3.5 w-3.5 text-[#FF5500] mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e] mt-0.5 flex-shrink-0" />
                 {s}
               </li>
             ))}
           </ul>
         </div>
-        <div className="border border-white/20 p-6 bg-black">
-          <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-4">{reportB.url} Strengths</h3>
+        <div className="border border-[#22c55e]/20 p-6 bg-[#22c55e]/5 hover:bg-[#22c55e]/10 transition-colors">
+          <h3 className="text-[10px] font-mono text-[#22c55e] uppercase tracking-widest mb-4">{reportB.url} Strengths</h3>
           <ul className="space-y-3">
             {comparison.siteBStrengths.map((s, i) => (
               <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-300 leading-relaxed">
-                <CheckCircle2 className="h-3.5 w-3.5 text-[#FF5500] mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#22c55e] mt-0.5 flex-shrink-0" />
                 {s}
               </li>
             ))}
@@ -172,12 +172,12 @@ function GeminiComparisonSection({
       </div>
 
       {/* Key Differences */}
-      <div className="border border-white/20 p-6 bg-black mb-6">
-        <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-4">Key Differences</h3>
+      <div className="border border-[#f97316]/20 p-6 bg-[#f97316]/5 mb-6">
+        <h3 className="text-[10px] font-mono text-[#f97316] uppercase tracking-widest mb-4">Key Differences</h3>
         <ul className="space-y-3">
           {comparison.keyDifferences.map((d, i) => (
-            <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-400 leading-relaxed">
-              <span className="text-[#FF5500] font-bold flex-shrink-0">{i + 1}.</span>
+            <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-300 leading-relaxed">
+              <span className="text-[#f97316] font-bold flex-shrink-0">{i + 1}.</span>
               {d}
             </li>
           ))}
@@ -264,28 +264,35 @@ function CompareContent() {
       intA = setInterval(() => { if (stepA < 3) { stepA++; setLoadingStepA(stepA); } }, 700);
       intB = setInterval(() => { if (stepB < 3) { stepB++; setLoadingStepB(stepB); } }, 900);
 
-      const fetchSite = async (url: string, setSite: (r: AuditReport) => void, setErr: (e: string) => void, setStep: (n: number) => void) => {
-        try {
-          const res = await fetch(`/api/audit?url=${encodeURIComponent(url)}`);
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-          }
-          const data: AuditReport = await res.json();
-          setStep(4);
-          setSite(data);
-        } catch {
-          setErr('Analysis failed. Please check the URL and try again.');
+      const fetchSiteData = async (url: string, setStep: (n: number) => void) => {
+        console.log(`[fetchSiteData] Fetching ${url}`);
+        const res = await fetch(`/api/audit?url=${encodeURIComponent(url)}`);
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`[fetchSiteData] HTTP Error ${res.status} for ${url}:`, errText);
+          throw new Error(`HTTP ${res.status}`);
         }
+        const data = await res.json();
+        setStep(4);
+        return data as AuditReport;
       };
 
-      Promise.allSettled([
-        fetchSite(rawA, setReportA, setErrorA, setLoadingStepA),
-        fetchSite(rawB, setReportB, setErrorB, setLoadingStepB),
-      ]).finally(() => {
+      try {
+        const [dataA, dataB] = await Promise.all([
+          fetchSiteData(rawA, setLoadingStepA),
+          fetchSiteData(rawB, setLoadingStepB)
+        ]);
+        setReportA(dataA);
+        setReportB(dataB);
+      } catch (e: any) {
+        console.error(`[Promise.all] Comparison audits failed:`, e);
+        setErrorA('Analysis failed. Please check the URL and try again.');
+        setErrorB('Analysis failed. Please check the URL and try again.');
+      } finally {
         clearInterval(intA);
         clearInterval(intB);
         setLoading(false);
-      });
+      }
     };
 
     runInit();
@@ -488,10 +495,10 @@ function CompareContent() {
 
   // Category data
   const categories = [
-    { label: 'Performance', key: 'performance' as const, icon: <Zap className="h-4 w-4" /> },
-    { label: 'SEO', key: 'seo' as const, icon: <Search className="h-4 w-4" /> },
-    { label: 'Accessibility', key: 'accessibility' as const, icon: <Accessibility className="h-4 w-4" /> },
-    { label: 'Best Practices', key: 'bestPractices' as const, icon: <ShieldCheck className="h-4 w-4" /> },
+    { label: 'Performance', key: 'performance' as const, icon: <Zap className="h-4 w-4" />, desc: 'Core web vitals and load speed' },
+    { label: 'SEO', key: 'seo' as const, icon: <Search className="h-4 w-4" />, desc: 'Search engine discoverability' },
+    { label: 'Accessibility', key: 'accessibility' as const, icon: <Accessibility className="h-4 w-4" />, desc: 'WCAG 2.1 AA compliance' },
+    { label: 'Best Practices', key: 'bestPractices' as const, icon: <ShieldCheck className="h-4 w-4" />, desc: 'Security and modern web standards' },
   ];
 
   const overallWinner = reportA && reportB ? computeWinner(reportA.overallScore, reportB.overallScore) : null;
@@ -613,10 +620,11 @@ function CompareContent() {
               const w = computeWinner(sa, sb);
               return (
                 <div key={cat.key} className="border border-white/20 p-6 bg-black">
-                  <div className="flex items-center justify-center gap-3 mb-6">
+                  <div className="flex items-center justify-center gap-3 mb-2">
                     <span className="text-white">{cat.icon}</span>
-                    <h4 className="text-xs font-mono text-zinc-500 uppercase tracking-widest">{cat.label}</h4>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-widest">{cat.label}</h4>
                   </div>
+                  <p className="text-[10px] font-mono text-zinc-500 text-center uppercase mb-6 tracking-widest">{cat.desc}</p>
                   <div className="flex items-center gap-4">
                     {/* Site A */}
                     <div className="flex-1 flex flex-col items-end">

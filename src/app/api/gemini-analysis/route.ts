@@ -100,12 +100,15 @@ function extractJson(raw: string): string {
 // Route handler
 // ---------------------------------------------------------------------------
 
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
+    console.error('[gemini-analysis] Missing GEMINI_API_KEY');
     return NextResponse.json(
-      { error: 'Gemini API key not configured', details: 'Set GEMINI_API_KEY in .env.local' },
+      { error: 'AI analysis is not configured.' },
       { status: 503 }
     );
   }
@@ -127,57 +130,84 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const ai = new GoogleGenAI({ apiKey });
   const prompt = buildPrompt(report);
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        // Request JSON output explicitly
-        responseMimeType: 'application/json',
-        temperature: 0.3, // Low temperature for consistent, structured output
-        maxOutputTokens: 8192,
-      },
-    });
+  let attempt = 0;
+  const maxRetries = 2; // Total 3 attempts
 
-    const rawText = response.text ?? '';
-    const jsonString = extractJson(rawText);
-
-    let analysis: GeminiAnalysis;
+  while (attempt <= maxRetries) {
     try {
-      analysis = JSON.parse(jsonString);
-    } catch {
-      console.error('[gemini-analysis] Failed to parse JSON:', jsonString.slice(0, 500));
-      return NextResponse.json(
-        {
-          error: 'Analysis Parse Error',
-          details: 'Gemini returned a response that could not be parsed as JSON.',
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.3,
+          maxOutputTokens: 8192,
         },
+      });
+
+      const rawText = response.text ?? '';
+      const jsonString = extractJson(rawText);
+
+      let analysis: GeminiAnalysis;
+      try {
+        analysis = JSON.parse(jsonString);
+      } catch (parseErr) {
+        console.error(`[gemini-analysis] Failed to parse JSON on attempt ${attempt + 1}:`, jsonString.slice(0, 500));
+        return NextResponse.json(
+          { error: 'AI analysis returned an invalid response. Please try again.' },
+          { status: 502 }
+        );
+      }
+
+      // Ensure generatedAt is set even if model omits it
+      if (!analysis.generatedAt) {
+        analysis.generatedAt = new Date().toISOString();
+      }
+
+      return NextResponse.json(analysis, {
+        headers: {
+          'Cache-Control': 'private, max-age=600',
+        },
+      });
+    } catch (err: unknown) {
+      const errorObj = err as { status?: number; message?: string };
+      console.error(`[gemini-analysis] API error on attempt ${attempt + 1}:`, errorObj?.message || String(err));
+
+      const isRateLimit = errorObj?.status === 429;
+      const isTimeout = errorObj?.status === 504 || errorObj?.message?.toLowerCase().includes('timeout');
+      const isServerError = errorObj?.status && errorObj.status >= 500;
+
+      if (attempt < maxRetries && (isRateLimit || isTimeout || isServerError)) {
+        attempt++;
+        const backoff = isRateLimit ? 2000 * attempt : 1000 * attempt;
+        console.log(`[gemini-analysis] Retrying in ${backoff}ms...`);
+        await delay(backoff);
+        continue;
+      }
+
+      if (isRateLimit) {
+        return NextResponse.json(
+          { error: 'AI analysis is temporarily busy. Please try again in a minute.' },
+          { status: 429 }
+        );
+      }
+      
+      if (isTimeout) {
+        return NextResponse.json(
+          { error: 'AI analysis took too long to respond.' },
+          { status: 504 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: 'AI analysis encountered an unexpected error.' },
         { status: 502 }
       );
     }
-
-    // Ensure generatedAt is set even if model omits it
-    if (!analysis.generatedAt) {
-      analysis.generatedAt = new Date().toISOString();
-    }
-
-    return NextResponse.json(analysis, {
-      headers: {
-        // Cache Gemini analysis for 10 minutes — it's deterministic for the same scores
-        'Cache-Control': 'private, max-age=600',
-      },
-    });
-  } catch (err: unknown) {
-    const errorObj = err as { status?: number; message?: string };
-    console.error('[gemini-analysis] Gemini API error:', errorObj?.message);
-
-    const status = errorObj?.status === 429 ? 429 : 502;
-    return NextResponse.json(
-      {
-        error: errorObj?.status === 429 ? 'Rate Limit Exceeded' : 'Gemini API Error',
-        details: errorObj?.message ?? 'An unexpected error occurred calling Gemini.',
-      },
-      { status }
-    );
   }
+
+  return NextResponse.json(
+    { error: 'AI analysis encountered an unexpected error.' },
+    { status: 502 }
+  );
 }
