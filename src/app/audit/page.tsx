@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -20,6 +21,41 @@ import {
   Loader2,
 } from 'lucide-react';
 import { AuditReport, ScoreMetric, GeminiAnalysis, GeminiIssue } from '@/types/audit';
+
+// ---------------------------------------------------------------------------
+// CountUp Animation Component
+// ---------------------------------------------------------------------------
+function CountUp({ value, duration = 1.5, className = '' }: { value: number; duration?: number; className?: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = value;
+    if (start === end) {
+      setCount(end);
+      return;
+    }
+    let startTime: number;
+    let animationFrame: number;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+      // easeOutExpo
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
+    };
+    animationFrame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [value, duration]);
+
+  return <span className={className}>{count}</span>;
+}
 
 // ---------------------------------------------------------------------------
 // Gemini AI Analysis section component
@@ -313,12 +349,11 @@ function AuditResultsContent() {
   const [formError, setFormError] = useState('');
 
   const loadingSteps = [
-    { text: '> INIT SECURE HANDSHAKE...', time: '0.12s' },
-    { text: '> CRAWLING DOM NODES...', time: '0.45s' },
-    { text: '> EXTRACTING METADATA...', time: '0.89s' },
-    { text: '> CALCULATING VITALS [FCP, LCP]...', time: '1.24s' },
-    { text: '> VALIDATING ARIA STANDARDS...', time: '1.76s' },
-    { text: '> GENERATING DIAGNOSTICS...', time: '2.01s' },
+    { text: 'Analyzing Performance...', time: '0.45s' },
+    { text: 'Checking Accessibility...', time: '0.89s' },
+    { text: 'Reviewing SEO...', time: '1.24s' },
+    { text: 'Evaluating Best Practices...', time: '1.76s' },
+    { text: 'Generating AI Recommendations...', time: '2.01s' },
   ];
 
   useEffect(() => {
@@ -486,7 +521,11 @@ function AuditResultsContent() {
     return (
       <div className="relative flex flex-col flex-grow items-center justify-center px-4 py-24 bg-black min-h-[70vh]">
         <div className="absolute inset-0 grid-bg-sharp opacity-30 pointer-events-none"></div>
-        <div className="max-w-2xl w-full p-8 border border-white/20 bg-black relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-2xl w-full p-8 border border-white/20 bg-black relative z-10 shadow-2xl"
+        >
           <div className="flex justify-between items-end mb-8 pb-4 border-b border-white/20">
             <div>
               <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">
@@ -494,25 +533,55 @@ function AuditResultsContent() {
               </h2>
               <p className="text-xs text-[#FF5500] font-mono mt-1">TARGET: {rawUrl}</p>
             </div>
-            <div className="h-4 w-4 bg-[#FF5500] animate-pulse"></div>
+            <motion.div 
+              animate={{ rotate: 360 }} 
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+              className="h-6 w-6 border-2 border-white/20 border-t-[#FF5500] rounded-full"
+            ></motion.div>
           </div>
-          <div className="space-y-2 font-mono text-xs">
+          
+          <div className="space-y-6 font-mono">
             {loadingSteps.map((step, idx) => {
               const isDone = idx < loadingStep;
               const isCurrent = idx === loadingStep;
               if (!isDone && !isCurrent) return null;
               return (
-                <div
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
                   key={idx}
-                  className={`flex justify-between ${isCurrent ? 'text-white' : 'text-zinc-600'}`}
+                  className="flex items-center gap-4"
                 >
-                  <span>{step.text}</span>
-                  <span>{isDone ? `[OK] ${step.time}` : '[RUNNING]'}</span>
-                </div>
+                  <div className="relative flex items-center justify-center w-6 h-6 shrink-0">
+                     {isDone ? (
+                       <CheckCircle2 className="w-5 h-5 text-green-500" />
+                     ) : (
+                       <div className="w-2 h-2 rounded-full bg-[#FF5500] animate-ping"></div>
+                     )}
+                  </div>
+                  <div className="flex-1">
+                     <div className={`text-sm ${isCurrent ? 'text-white' : 'text-zinc-500'}`}>
+                        {step.text}
+                     </div>
+                     {isCurrent && (
+                        <div className="mt-2 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                           <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: "100%" }}
+                             transition={{ duration: 0.4 }}
+                             className="h-full bg-[#FF5500]"
+                           ></motion.div>
+                        </div>
+                     )}
+                  </div>
+                  <div className="text-xs text-zinc-600 shrink-0">
+                     {isDone ? `[${step.time}]` : ''}
+                  </div>
+                </motion.div>
               );
             })}
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -652,7 +721,7 @@ function AuditResultsContent() {
             Master Grade
           </h3>
           <div className="text-[120px] leading-none font-black tracking-tighter text-white">
-            {report.overallScore}
+            <CountUp value={report.overallScore} duration={2} />
           </div>
           <div className="mt-6">
             <div
@@ -687,7 +756,7 @@ function AuditResultsContent() {
             </div>
             <div>
               <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.performance)}`}>
-                {report.scores.performance}
+                <CountUp value={report.scores.performance} />
               </span>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
                 {getScoreLabel(report.scores.performance)}
@@ -705,7 +774,7 @@ function AuditResultsContent() {
             </div>
             <div>
               <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.seo)}`}>
-                {report.scores.seo}
+                <CountUp value={report.scores.seo} />
               </span>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
                 {getScoreLabel(report.scores.seo)}
@@ -723,7 +792,7 @@ function AuditResultsContent() {
             </div>
             <div>
               <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.accessibility)}`}>
-                {report.scores.accessibility}
+                <CountUp value={report.scores.accessibility} />
               </span>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
                 {getScoreLabel(report.scores.accessibility)}
@@ -741,7 +810,7 @@ function AuditResultsContent() {
             </div>
             <div>
               <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.bestPractices)}`}>
-                {report.scores.bestPractices}
+                <CountUp value={report.scores.bestPractices} />
               </span>
               <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
                 {getScoreLabel(report.scores.bestPractices)}
