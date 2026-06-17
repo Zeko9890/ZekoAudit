@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -34,6 +35,40 @@ function computeWinner(a: number, b: number): CategoryWinner {
   const delta = Math.abs(a - b);
   if (delta <= 2) return { winner: 'tie', delta };
   return { winner: a > b ? 'a' : 'b', delta };
+}
+
+// ---------------------------------------------------------------------------
+// Helper: CountUp Animation
+// ---------------------------------------------------------------------------
+function CountUp({ value, duration = 1.5, className = '' }: { value: number; duration?: number; className?: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = value;
+    if (start === end) {
+      setCount(end);
+      return;
+    }
+    let startTime: number;
+    let animationFrame: number;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
+    };
+    animationFrame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [value, duration]);
+
+  return <span className={className}>{count}</span>;
 }
 
 // ---------------------------------------------------------------------------
@@ -566,13 +601,13 @@ function CompareContent() {
           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Site A</span>
           <span className="text-xs text-white font-mono mb-4">{rawA}</span>
           <div className={`text-[100px] leading-none font-black tracking-tighter ${reportA ? getScoreColor(reportA.overallScore) : 'text-zinc-700'}`}>
-            {reportA?.overallScore ?? '—'}
+            {reportA ? <CountUp value={reportA.overallScore} duration={2} /> : '—'}
           </div>
           {overallWinner?.winner === 'a' && (
-            <div className="mt-6 flex items-center gap-2 border border-[#22c55e] bg-[#22c55e]/10 px-4 py-2">
+            <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", bounce: 0.5, delay: 0.5 }} className="mt-6 flex items-center gap-2 border border-[#22c55e] bg-[#22c55e]/10 px-4 py-2">
               <Trophy className="h-4 w-4 text-[#22c55e]" />
               <span className="text-xs font-mono font-bold text-[#22c55e] uppercase tracking-widest">Better Overall Performance</span>
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -589,13 +624,13 @@ function CompareContent() {
           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Site B</span>
           <span className="text-xs text-white font-mono mb-4">{rawB}</span>
           <div className={`text-[100px] leading-none font-black tracking-tighter ${reportB ? getScoreColor(reportB.overallScore) : 'text-zinc-700'}`}>
-            {reportB?.overallScore ?? '—'}
+            {reportB ? <CountUp value={reportB.overallScore} duration={2} /> : '—'}
           </div>
           {overallWinner?.winner === 'b' && (
-            <div className="mt-6 flex items-center gap-2 border border-[#22c55e] bg-[#22c55e]/10 px-4 py-2">
+            <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", bounce: 0.5, delay: 0.5 }} className="mt-6 flex items-center gap-2 border border-[#22c55e] bg-[#22c55e]/10 px-4 py-2">
               <Trophy className="h-4 w-4 text-[#22c55e]" />
               <span className="text-xs font-mono font-bold text-[#22c55e] uppercase tracking-widest">Better Overall Performance</span>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
@@ -614,12 +649,19 @@ function CompareContent() {
         <div className="mt-12">
           <h3 className="text-2xl font-extrabold text-white uppercase tracking-tight mb-6">Category Breakdown</h3>
           <div className="space-y-6">
-            {categories.map((cat) => {
+            {categories.map((cat, i) => {
               const sa = reportA.scores[cat.key];
               const sb = reportB.scores[cat.key];
               const w = computeWinner(sa, sb);
               return (
-                <div key={cat.key} className="border border-white/20 p-6 bg-black">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.15, duration: 0.5 }}
+                  key={cat.key} 
+                  className="border border-white/20 p-6 bg-black"
+                >
                   <div className="flex items-center justify-center gap-3 mb-2">
                     <span className="text-white">{cat.icon}</span>
                     <h4 className="text-sm font-bold text-white uppercase tracking-widest">{cat.label}</h4>
@@ -628,22 +670,38 @@ function CompareContent() {
                   <div className="flex items-center gap-4">
                     {/* Site A */}
                     <div className="flex-1 flex flex-col items-end">
-                      <span className={`text-2xl font-black mb-2 ${w.winner === 'b' ? 'opacity-50' : ''} ${getScoreColor(sa)}`}>{sa}</span>
+                      <span className={`text-2xl font-black mb-2 ${w.winner === 'b' ? 'opacity-50' : ''} ${getScoreColor(sa)}`}>
+                        <CountUp value={sa} />
+                      </span>
                       <div className="w-full bg-white/10 h-3 flex justify-end overflow-hidden">
-                        <div className={`h-full ${getScoreColor(sa, true)} ${w.winner === 'b' ? 'opacity-50' : ''}`} style={{ width: `${sa}%` }}></div>
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${sa}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: i * 0.15 + 0.3, ease: "easeOut" as const }}
+                          className={`h-full ${getScoreColor(sa, true)} ${w.winner === 'b' ? 'opacity-50' : ''}`}
+                        ></motion.div>
                       </div>
                     </div>
                     {/* VS */}
                     <div className="text-zinc-600 font-black text-sm px-4">VS</div>
                     {/* Site B */}
                     <div className="flex-1 flex flex-col items-start">
-                      <span className={`text-2xl font-black mb-2 ${w.winner === 'a' ? 'opacity-50' : ''} ${getScoreColor(sb)}`}>{sb}</span>
+                      <span className={`text-2xl font-black mb-2 ${w.winner === 'a' ? 'opacity-50' : ''} ${getScoreColor(sb)}`}>
+                        <CountUp value={sb} />
+                      </span>
                       <div className="w-full bg-white/10 h-3 flex justify-start overflow-hidden">
-                        <div className={`h-full ${getScoreColor(sb, true)} ${w.winner === 'a' ? 'opacity-50' : ''}`} style={{ width: `${sb}%` }}></div>
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${sb}%` }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1, delay: i * 0.15 + 0.3, ease: "easeOut" as const }}
+                          className={`h-full ${getScoreColor(sb, true)} ${w.winner === 'a' ? 'opacity-50' : ''}`}
+                        ></motion.div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -655,12 +713,19 @@ function CompareContent() {
         <div className="mt-16 border-t border-white/20 pt-8">
           <h3 className="text-2xl font-extrabold text-white uppercase tracking-tight mb-6">Core Web Vitals</h3>
           <div className="space-y-4">
-            {(Object.keys(reportA.metrics) as (keyof AuditReport['metrics'])[]).map((key) => {
+            {(Object.keys(reportA.metrics) as (keyof AuditReport['metrics'])[]).map((key, i) => {
               const ma = reportA.metrics[key];
               const mb = reportB.metrics[key];
               const w = computeWinner(ma.score, mb.score);
               return (
-                <div key={key} className="border border-white/20 p-4 bg-black flex flex-col sm:flex-row sm:items-center gap-4">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.4 }}
+                  key={key} 
+                  className="border border-white/20 p-4 bg-black flex flex-col sm:flex-row sm:items-center gap-4"
+                >
                   <div className="sm:w-1/4 text-center sm:text-left">
                     <span className="text-sm font-bold text-white uppercase">{ma.label}</span>
                   </div>
@@ -688,7 +753,7 @@ function CompareContent() {
                       <span className="text-[10px] font-mono text-zinc-500 uppercase">{mb.status}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

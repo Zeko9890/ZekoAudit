@@ -19,6 +19,123 @@ import {
   Cpu,
 } from 'lucide-react';
 
+function CountUp({ value, duration = 1.5, className = '' }: { value: number; duration?: number; className?: string }) {
+  const [count, setCount] = useState(0);
+
+  React.useEffect(() => {
+    let start = 0;
+    const end = value;
+    if (start === end) {
+      setCount(end);
+      return;
+    }
+    let startTime: number;
+    let animationFrame: number;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
+    };
+    animationFrame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [value, duration]);
+
+  return <span className={className}>{count}</span>;
+}
+
+function AnimatedAuditPreview() {
+  const [step, setStep] = useState(0);
+
+  React.useEffect(() => {
+    const timer1 = setTimeout(() => setStep(1), 600);
+    const timer2 = setTimeout(() => setStep(2), 1200);
+    const timer3 = setTimeout(() => setStep(3), 1800);
+    return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+  }, []);
+
+  return (
+    <div className="w-full bg-zinc-950 border border-white/10 p-6 sm:p-8 rounded-sm shadow-2xl relative overflow-hidden h-full flex flex-col justify-between min-h-[400px]">
+      <div className="absolute inset-0 grid-bg-sharp opacity-10 pointer-events-none"></div>
+      
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="h-2 w-2 bg-[#FF5500] rounded-full animate-ping"></div>
+          <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Live Engine Simulation</span>
+        </div>
+        <span className="text-[10px] font-mono text-zinc-600 border border-white/10 px-2 py-0.5 rounded-sm bg-black/50">TARGET: zeko.dev</span>
+      </div>
+      
+      {/* Scores */}
+      <div className="grid grid-cols-2 gap-4 mb-8 relative z-10">
+        <div className="border border-white/5 bg-black p-6 flex flex-col items-center justify-center transition-all">
+           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Performance</span>
+           {step >= 1 ? (
+             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-5xl font-black text-[#22c55e] leading-none">
+               <CountUp value={98} />
+             </motion.div>
+           ) : <span className="text-5xl font-black text-zinc-800 leading-none">--</span>}
+        </div>
+        
+        <div className="border border-white/5 bg-black p-6 flex flex-col items-center justify-center transition-all">
+           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">SEO</span>
+           {step >= 2 ? (
+             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-5xl font-black text-[#22c55e] leading-none">
+               <CountUp value={100} />
+             </motion.div>
+           ) : <span className="text-5xl font-black text-zinc-800 leading-none">--</span>}
+        </div>
+      </div>
+
+      {/* Progress Bars */}
+      <div className="space-y-6 relative z-10">
+        <div>
+          <div className="flex justify-between items-end mb-2">
+            <div className="flex flex-col">
+               <span className="text-[10px] font-mono text-zinc-500 uppercase">Core Web Vitals</span>
+               <span className="text-xs text-white font-bold">Largest Contentful Paint</span>
+            </div>
+            {step >= 1 ? <span className="text-xs font-mono text-[#22c55e]">1.2s</span> : <span className="text-xs font-mono text-zinc-700">--</span>}
+          </div>
+          <div className="h-1.5 w-full bg-white/5 overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }} 
+              animate={{ width: step >= 1 ? "85%" : 0 }} 
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="h-full bg-[#22c55e]"
+            ></motion.div>
+          </div>
+        </div>
+        
+        <div>
+          <div className="flex justify-between items-end mb-2">
+            <div className="flex flex-col">
+               <span className="text-[10px] font-mono text-zinc-500 uppercase">Accessibility</span>
+               <span className="text-xs text-white font-bold">WCAG 2.1 AA</span>
+            </div>
+            {step >= 3 ? <span className="text-xs font-mono text-[#22c55e]">100%</span> : <span className="text-xs font-mono text-zinc-700">--</span>}
+          </div>
+          <div className="h-1.5 w-full bg-white/5 overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }} 
+              animate={{ width: step >= 3 ? "100%" : 0 }} 
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="h-full bg-[#22c55e]"
+            ></motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const FAQS = [
   {
     question: "How is ZekoAudit different from standard Lighthouse?",
@@ -88,38 +205,44 @@ export default function Home() {
 
       {/* Asymmetric Hero Section */}
       <section id="analyze" className="w-full max-w-7xl px-4 pt-24 pb-32 sm:px-6 lg:px-8 sm:pt-32">
-        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-8">
+        <div className="flex flex-col lg:flex-row items-start gap-16 lg:gap-8">
           
-          {/* Left: Huge Title, asymmetric positioning */}
+          {/* Left: Huge Title & Animated Preview */}
           <motion.div 
             initial="hidden" 
             animate="visible" 
             variants={staggerContainer} 
-            className="w-full lg:w-7/12 pt-8"
+            className="w-full lg:w-7/12 pt-0 lg:pt-8 order-2 lg:order-1 flex flex-col gap-12 lg:pr-8"
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center space-x-2 border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] sm:text-xs text-zinc-300 mb-8 uppercase tracking-widest font-mono backdrop-blur-sm rounded-sm">
-              <span className="w-2 h-2 bg-[#FF5500] animate-pulse rounded-full"></span>
-              <span>Engineering-Grade Web Audits</span>
-            </motion.div>
-            
-            <motion.h1 variants={fadeUp} className="text-5xl sm:text-7xl lg:text-[5.5rem] font-extrabold tracking-tighter text-white leading-[1.05] mb-8">
-              PRECISION <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5500] to-orange-400">AUDITS.</span><br/>
-              MAXIMUM<br/>
-              VELOCITY.
-            </motion.h1>
+            <div>
+              <motion.div variants={fadeUp} className="inline-flex items-center space-x-2 border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] sm:text-xs text-zinc-300 mb-8 uppercase tracking-widest font-mono backdrop-blur-sm rounded-sm">
+                <span className="w-2 h-2 bg-[#FF5500] animate-pulse rounded-full"></span>
+                <span>Engineering-Grade Web Audits</span>
+              </motion.div>
+              
+              <motion.h1 variants={fadeUp} className="text-5xl sm:text-7xl lg:text-[5.5rem] font-extrabold tracking-tighter text-white leading-[1.05] mb-8">
+                PRECISION <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5500] to-orange-400">AUDITS.</span><br/>
+                MAXIMUM<br/>
+                VELOCITY.
+              </motion.h1>
 
-            <motion.p variants={fadeUp} className="text-lg sm:text-xl text-zinc-400 font-light mb-10 max-w-md leading-relaxed border-l-2 border-white/10 pl-6">
-              Professional audits powered by Google PageSpeed Insights. Actionable AI insights, automated PDF reporting, and competitor benchmarking.
-            </motion.p>
+              <motion.p variants={fadeUp} className="text-lg sm:text-xl text-zinc-400 font-light max-w-md leading-relaxed border-l-2 border-[#FF5500] pl-6">
+                Professional audits powered by Google PageSpeed Insights. Actionable AI insights, automated PDF reporting, and competitor benchmarking.
+              </motion.p>
+            </div>
+
+            <motion.div variants={fadeUp} className="w-full relative">
+               <AnimatedAuditPreview />
+            </motion.div>
           </motion.div>
 
-          {/* Right: Floating Interactive Card */}
+          {/* Right: Audit Form (Primary Focus) */}
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="w-full lg:w-5/12 relative"
+            className="w-full lg:w-5/12 relative order-1 lg:order-2 lg:sticky lg:top-32 z-10"
           >
             <div className="absolute -inset-4 bg-gradient-to-b from-[#FF5500]/20 to-transparent blur-2xl opacity-50 -z-10 rounded-full"></div>
             <motion.div 
@@ -152,10 +275,7 @@ export default function Home() {
               {/* Forms */}
               <div className="relative z-10 min-h-[220px]">
                 {mode === 'single' && (
-                  <motion.form 
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    onSubmit={handleAnalyze} className="space-y-6"
-                  >
+                  <form onSubmit={handleAnalyze} className="space-y-6">
                     <div>
                       <label htmlFor="url-input" className="block text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Target URL</label>
                       <div className="flex items-center px-4 gap-3 bg-black border border-white/10 focus-within:border-[#FF5500]/50 transition-colors rounded-sm">
@@ -178,14 +298,11 @@ export default function Home() {
                     >
                       Run Diagnostics <ArrowRight className="h-4 w-4" />
                     </motion.button>
-                  </motion.form>
+                  </form>
                 )}
 
                 {mode === 'compare' && (
-                  <motion.form 
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    onSubmit={handleCompare} className="space-y-5"
-                  >
+                  <form onSubmit={handleCompare} className="space-y-5">
                     <div>
                       <div className="flex items-center px-4 gap-3 bg-black border border-white/10 focus-within:border-[#FF5500]/50 transition-colors rounded-sm">
                         <span className="text-[10px] font-mono text-zinc-500 w-4">A</span>
@@ -211,7 +328,7 @@ export default function Home() {
                     >
                       <GitCompareArrows className="h-4 w-4" /> Execute Comparison
                     </motion.button>
-                  </motion.form>
+                  </form>
                 )}
 
                 {error && (

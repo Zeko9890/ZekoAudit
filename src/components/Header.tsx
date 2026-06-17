@@ -1,12 +1,35 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { ShieldCheck, ArrowRight, GitCompareArrows } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ShieldCheck } from 'lucide-react';
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
+  const [scrolled, setScrolled] = useState(false);
+  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+  const pathname = usePathname();
+  const { scrollY } = useScroll();
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setScrolled(latest > 20);
+  });
+
+  const links = [
+    { name: 'Features', path: '/#features' },
+    { name: 'How It Works', path: '/#how-it-works' },
+    { name: 'Examples', path: '/examples' },
+    { name: 'Docs', path: '/docs' }
+  ];
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black backdrop-blur-none">
+    <motion.header 
+      className={`fixed top-0 z-50 w-full transition-all duration-300 border-b ${scrolled ? 'bg-black/80 backdrop-blur-md border-white/10' : 'bg-transparent border-transparent'}`}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <div className="mx-auto flex max-w-7xl h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2 group">
@@ -18,19 +41,36 @@ export default function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-zinc-400">
-          <Link href="/#features" className="hover:text-white transition-colors">
-            Features
-          </Link>
-          <Link href="/#how-it-works" className="hover:text-white transition-colors">
-            How It Works
-          </Link>
-          <Link href="/examples" className="hover:text-white transition-colors">
-            Examples
-          </Link>
-          <Link href="/docs" className="hover:text-white transition-colors">
-            Docs
-          </Link>
+        <nav className="hidden md:flex items-center space-x-1">
+          {links.map((link) => {
+            const isActive = pathname === link.path;
+            return (
+              <Link
+                key={link.path}
+                href={link.path}
+                onMouseEnter={() => setHoveredPath(link.path)}
+                onMouseLeave={() => setHoveredPath(null)}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <span className="relative z-10">{link.name}</span>
+                {hoveredPath === link.path && (
+                  <motion.div
+                    layoutId="navbar-hover"
+                    className="absolute inset-0 bg-white/5 rounded-sm -z-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      layout: { type: "tween", ease: "easeOut", duration: 0.2 },
+                      opacity: { duration: 0.15 }
+                    }}
+                  >
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-[#FF5500]"></div>
+                  </motion.div>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Mobile Menu Button / Secondary Actions */}
@@ -46,6 +86,6 @@ export default function Header() {
           </button>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }
