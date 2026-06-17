@@ -170,6 +170,16 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
     return ranks[a.impact] - ranks[b.impact];
   });
 
+  // Extract screenshot
+  let screenshotUrl = undefined;
+  const finalScreenshot = data.lighthouseResult?.audits?.['final-screenshot']?.details?.data;
+  if (finalScreenshot) {
+    screenshotUrl = finalScreenshot;
+    console.log(`[audit] Successfully extracted final-screenshot data (${screenshotUrl.substring(0, 30)}...)`);
+  } else {
+    console.log(`[audit] WARNING: No final-screenshot data found in lighthouseResult.audits['final-screenshot'].`);
+  }
+
   return {
     url: targetUrl.replace(/^https?:\/\/(www\.)?/, ''),
     name: siteName,
@@ -182,6 +192,7 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
     scores: { performance, seo, accessibility, bestPractices },
     metrics,
     recommendations,
+    screenshotUrl,
   };
 }
 

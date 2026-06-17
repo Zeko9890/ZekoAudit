@@ -41,6 +41,7 @@ export interface AuditReport {
     speedIndex: ScoreMetric;
   };
   recommendations: Recommendation[];
+  screenshotUrl?: string;
 }
 
 // ---------------------------------------------------------------------------

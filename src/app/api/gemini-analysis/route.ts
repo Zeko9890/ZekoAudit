@@ -103,12 +103,13 @@ function extractJson(raw: string): string {
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const customKey = req.headers.get('x-gemini-key');
+  const apiKey = customKey || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     console.error('[gemini-analysis] Missing GEMINI_API_KEY');
     return NextResponse.json(
-      { error: 'AI analysis is not configured.' },
+      { error: 'AI analysis is not configured. Please provide your own API key.', code: 'MISSING_API_KEY' },
       { status: 503 }
     );
   }
@@ -187,27 +188,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       if (isRateLimit) {
         return NextResponse.json(
-          { error: 'AI analysis is temporarily busy. Please try again in a minute.' },
+          { error: 'AI analysis is temporarily busy. Quota exhausted.', code: 'RATE_LIMIT_EXCEEDED' },
           { status: 429 }
         );
       }
       
       if (isTimeout) {
         return NextResponse.json(
-          { error: 'AI analysis took too long to respond.' },
+          { error: 'AI analysis took too long to respond. The model timed out.', code: 'TIMEOUT' },
           { status: 504 }
         );
       }
 
       return NextResponse.json(
-        { error: 'AI analysis encountered an unexpected error.' },
+        { error: 'AI analysis encountered an unexpected API error.', code: 'API_ERROR' },
         { status: 502 }
       );
     }
   }
 
   return NextResponse.json(
-    { error: 'AI analysis encountered an unexpected error.' },
+    { error: 'AI analysis encountered an unexpected API error.', code: 'API_ERROR' },
     { status: 502 }
   );
 }

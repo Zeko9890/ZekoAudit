@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   FileDown,
   Loader2,
+  Image,
+  Camera,
 } from 'lucide-react';
 import { AuditReport, ScoreMetric, GeminiAnalysis, GeminiIssue } from '@/types/audit';
 
@@ -61,6 +63,47 @@ function CountUp({ value, duration = 1.5, className = '' }: { value: number; dur
 // Gemini AI Analysis section component
 // ---------------------------------------------------------------------------
 
+function generateFallbackAnalysis(report: AuditReport): GeminiAnalysis {
+  const verdict = report.overallScore >= 90 ? 'Excellent' : report.overallScore >= 75 ? 'Good' : report.overallScore >= 50 ? 'Fair' : 'Poor';
+  
+  const topIssues: GeminiIssue[] = report.recommendations
+    .filter(r => r.impact !== 'passed')
+    .slice(0, 5)
+    .map(r => ({
+      title: r.title,
+      description: r.description,
+      fix: r.solution,
+      priority: r.impact === 'high' ? 'high' : 'medium',
+      category: r.category,
+      estimatedImpact: r.improvement
+    }));
+
+  if (topIssues.length === 0) {
+    topIssues.push({
+      title: 'Optimize Core Web Vitals',
+      description: 'LCP measures when the largest content element becomes visible. Ensuring fast loading prevents user bounce.',
+      fix: 'Optimize images, defer offscreen resources, and minimize render-blocking scripts.',
+      priority: 'low',
+      category: 'performance',
+      estimatedImpact: '+5 Performance'
+    });
+  }
+
+  const quickWins = topIssues.slice(0, 3).map(i => i.fix);
+
+  return {
+    executiveSummary: `Based on the raw Lighthouse metrics, this site scored an overall ${report.overallScore}/100. AI analysis is currently unavailable, so this report was generated directly from underlying performance heuristics to ensure you have actionable takeaways.`,
+    verdict,
+    topIssues,
+    quickWins: quickWins.length > 0 ? quickWins : ['Enable text compression', 'Optimize image formats'],
+    strategicRecommendations: [
+      'Implement a continuous performance monitoring pipeline.',
+      'Review core web vitals regularly using Lighthouse audits.'
+    ],
+    generatedAt: new Date().toISOString()
+  };
+}
+
 function PriorityBadge({ priority }: { priority: GeminiIssue['priority'] }) {
   const styles: Record<GeminiIssue['priority'], string> = {
     critical: 'border-[#FF5500] text-[#FF5500]',
@@ -84,46 +127,61 @@ function GeminiSection({
 }) {
   const [analysis, setAnalysis] = useState<GeminiAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorObj, setErrorObj] = useState<{ message: string; code: string } | null>(null);
   const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
+  const [customKey, setCustomKey] = useState('');
+  const [isFallback, setIsFallback] = useState(false);
+
+  const runAnalysis = async (keyOverride?: string) => {
+    let cancelled = false;
+    setLoading(true);
+    setErrorObj(null);
+    setAnalysis(null);
+    setIsFallback(false);
+
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (keyOverride) {
+        headers['X-Gemini-Key'] = keyOverride;
+      }
+
+      const res = await fetch('/api/gemini-analysis', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(report),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw { message: err.error || `HTTP ${res.status}`, code: err.code || 'API_ERROR' };
+      }
+
+      const data: GeminiAnalysis = await res.json();
+      if (!cancelled) {
+        setAnalysis(data);
+        setLoading(false);
+        onAnalysisReady?.(data);
+      }
+    } catch (err: any) {
+      if (!cancelled) {
+        setErrorObj({ message: err.message || 'AI recommendations are temporarily unavailable.', code: err.code || 'API_ERROR' });
+        setLoading(false);
+      }
+    }
+    return () => { cancelled = true; };
+  };
 
   useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      setLoading(true);
-      setError(null);
-      setAnalysis(null);
-
-      try {
-        const res = await fetch('/api/gemini-analysis', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(report),
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.details || err.error || `HTTP ${res.status}`);
-        }
-
-        const data: GeminiAnalysis = await res.json();
-        if (!cancelled) {
-          setAnalysis(data);
-          setLoading(false);
-          onAnalysisReady?.(data);
-        }
-      } catch {
-        if (!cancelled) {
-          setError('AI recommendations are temporarily unavailable.');
-          setLoading(false);
-        }
-      }
-    };
-
-    run();
-    return () => { cancelled = true; };
+    runAnalysis();
   }, [report.url, report.overallScore]);
+
+  const handleUseFallback = () => {
+    const fallback = generateFallbackAnalysis(report);
+    setAnalysis(fallback);
+    setIsFallback(true);
+    setErrorObj(null);
+    onAnalysisReady?.(fallback);
+  };
 
   // Loading state
   if (loading) {
@@ -159,7 +217,11 @@ function GeminiSection({
   }
 
   // Error state
-  if (error) {
+  if (errorObj) {
+    const isRateLimit = errorObj.code === 'RATE_LIMIT_EXCEEDED';
+    const isMissingKey = errorObj.code === 'MISSING_API_KEY';
+    const needsKey = isRateLimit || isMissingKey;
+
     return (
       <div className="mt-16 border-t border-white/20 pt-8">
         <div className="flex items-center gap-3 mb-8">
@@ -168,17 +230,52 @@ function GeminiSection({
             AI Analysis
           </h2>
         </div>
-        <div className="border border-[#FF5500]/30 p-6 bg-[#FF5500]/5">
-          <div className="flex items-center gap-3 mb-3">
-            <AlertTriangle className="h-4 w-4 text-[#FF5500]" />
-            <h4 className="text-sm font-bold text-white uppercase tracking-widest">
-              Gemini Analysis Unavailable
+        <div className="border border-[#FF5500]/50 p-6 sm:p-8 bg-black relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-[#FF5500]"></div>
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="h-5 w-5 text-[#FF5500]" />
+            <h4 className="text-lg font-bold text-white uppercase tracking-widest">
+              {isRateLimit ? 'Quota Exhausted' : isMissingKey ? 'API Key Required' : 'Analysis Unavailable'}
             </h4>
           </div>
-          <p className="text-xs font-mono text-zinc-400 leading-relaxed">{error}</p>
-          <p className="text-[10px] font-mono text-zinc-600 mt-3">
-            Ensure GEMINI_API_KEY is set in .env.local and the key has Gemini API access.
+          <p className="text-sm font-mono text-zinc-400 leading-relaxed mb-6">
+            {errorObj.message}
+            {isRateLimit && ' To ensure stability, the global AI pool limits concurrent requests. You can wait a minute or provide your own API key to bypass this.'}
           </p>
+
+          {needsKey ? (
+            <div className="space-y-4 max-w-md">
+              <input
+                type="password"
+                placeholder="Enter Gemini API Key (sk-...)"
+                value={customKey}
+                onChange={(e) => setCustomKey(e.target.value)}
+                className="w-full bg-zinc-900 border border-white/20 p-3 text-white text-sm font-mono focus:border-[#FF5500] focus:outline-none transition-colors"
+              />
+              <div className="flex gap-4">
+                <button
+                  onClick={() => runAnalysis(customKey)}
+                  disabled={!customKey}
+                  className="flex-1 bg-[#FF5500] hover:bg-[#E64C00] disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3 text-xs uppercase tracking-widest transition-colors"
+                >
+                  Retry Analysis
+                </button>
+                <button
+                  onClick={handleUseFallback}
+                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold py-3 text-xs uppercase tracking-widest transition-colors"
+                >
+                  Use Fallback
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={handleUseFallback}
+              className="bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold py-3 px-6 text-xs uppercase tracking-widest transition-colors"
+            >
+              Generate Fallback Report
+            </button>
+          )}
         </div>
       </div>
     );
@@ -187,10 +284,10 @@ function GeminiSection({
   if (!analysis) return null;
 
   const verdictStyles: Record<GeminiAnalysis['verdict'], string> = {
-    Excellent: 'border-white text-white',
-    Good: 'border-zinc-300 text-zinc-300',
-    Fair: 'border-zinc-500 text-zinc-500',
-    Poor: 'border-[#FF5500] text-[#FF5500]',
+    Excellent: 'border-[#22c55e] text-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.15)]',
+    Good: 'border-white text-white',
+    Fair: 'border-[#f97316] text-[#f97316]',
+    Poor: 'border-[#FF5500] text-[#FF5500] shadow-[0_0_15px_rgba(255,85,0,0.15)]',
   };
 
   return (
@@ -198,32 +295,58 @@ function GeminiSection({
       {/* Section header */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-[#FF5500]" />
-          <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">
+          <Sparkles className="h-6 w-6 text-[#FF5500]" />
+          <h2 className="text-3xl font-extrabold text-white uppercase tracking-tight">
             AI Analysis
           </h2>
-          <span className="text-[10px] font-mono text-[#FF5500] border border-[#FF5500]/30 px-2 py-0.5 uppercase tracking-widest">
-            Gemini 2.5 Flash
+          <span className="text-[10px] font-mono text-[#FF5500] border border-[#FF5500]/30 px-2 py-0.5 uppercase tracking-widest bg-[#FF5500]/10">
+            {isFallback ? 'Lighthouse Fallback' : 'Gemini 2.5 Flash'}
           </span>
-        </div>
-        <div className={`ml-auto text-xs font-mono uppercase border px-3 py-1 tracking-widest ${verdictStyles[analysis.verdict]}`}>
-          Verdict: {analysis.verdict}
         </div>
       </div>
 
-      {/* Executive Summary */}
-      <div className="border border-white/20 p-6 bg-black mb-6">
-        <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">
-          Executive Summary
+      {/* 1. Verdict (Dedicated Card) */}
+      <div className={`mb-8 p-8 border-2 bg-black flex flex-col md:flex-row items-center justify-between gap-6 ${verdictStyles[analysis.verdict]}`}>
+         <div>
+           <h3 className="text-xs font-mono uppercase tracking-widest opacity-70 mb-2">Final AI Verdict</h3>
+           <div className="text-5xl font-black uppercase tracking-tighter">
+             {analysis.verdict}
+           </div>
+         </div>
+         {isFallback && (
+           <div className="text-xs font-mono border border-current px-3 py-1 opacity-80 uppercase">
+             Fallback Mode Active
+           </div>
+         )}
+      </div>
+
+      {/* 2. Quick Wins */}
+      <div className="mb-8">
+        <h3 className="text-xl font-extrabold text-white uppercase tracking-tight mb-4">Quick Wins / &lt;1hr</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {analysis.quickWins.map((win, i) => (
+            <div key={i} className="border border-[#FF5500]/30 bg-[#FF5500]/5 p-5 hover:bg-[#FF5500]/10 transition-colors">
+              <CheckCircle2 className="h-5 w-5 text-[#FF5500] mb-3" />
+              <p className="text-sm font-mono text-zinc-200 leading-relaxed">{win}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 3. Executive Summary */}
+      <div className="mb-8 p-6 sm:p-8 border border-white/20 bg-zinc-950 relative">
+        <div className="absolute top-0 left-0 w-1 h-full bg-white/40"></div>
+        <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <Sparkles className="h-3 w-3 text-zinc-500" /> Executive Summary
         </h3>
-        <p className="text-sm text-zinc-200 leading-relaxed font-light">
+        <p className="text-base sm:text-lg text-white leading-relaxed font-light">
           {analysis.executiveSummary}
         </p>
       </div>
 
-      {/* Top Issues */}
+      {/* 4. Top Issues */}
       <div className="mb-6">
-        <h3 className="text-lg font-extrabold text-white uppercase tracking-tight mb-4">
+        <h3 className="text-xl font-extrabold text-white uppercase tracking-tight mb-4">
           Prioritized Issues
         </h3>
         <div className="border border-white/20">
@@ -285,43 +408,77 @@ function GeminiSection({
         </div>
       </div>
 
-      {/* Quick Wins + Strategic grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Quick Wins */}
-        <div className="border border-white/20 p-6 bg-black">
-          <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-4">
-            Quick Wins / &lt;1hr
-          </h3>
-          <ul className="space-y-3">
-            {analysis.quickWins.map((win, i) => (
-              <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-300 leading-relaxed">
-                <CheckCircle2 className="h-3.5 w-3.5 text-[#FF5500] mt-0.5 flex-shrink-0" />
-                {win}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Strategic Recommendations */}
-        <div className="border border-white/20 p-6 bg-black">
-          <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-4">
-            Strategic Recommendations
-          </h3>
-          <ul className="space-y-3">
-            {analysis.strategicRecommendations.map((rec, i) => (
-              <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-400 leading-relaxed">
-                <span className="text-zinc-600 font-bold flex-shrink-0">{i + 1}.</span>
-                {rec}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Strategic Recommendations */}
+      <div className="mb-6 p-6 border border-white/20 bg-black">
+        <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-4">
+          Strategic Recommendations
+        </h3>
+        <ul className="space-y-3">
+          {analysis.strategicRecommendations.map((rec, i) => (
+            <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-400 leading-relaxed">
+              <span className="text-zinc-600 font-bold flex-shrink-0">{i + 1}.</span>
+              {rec}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Footer */}
       <p className="mt-4 text-[10px] font-mono text-zinc-700 text-right">
-        Generated by Gemini 2.5 Flash · {new Date(analysis.generatedAt).toLocaleString()}
+        Generated by {isFallback ? 'Lighthouse Fallback Engine' : 'Gemini 2.5 Flash'} · {new Date(analysis.generatedAt).toLocaleString()}
       </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Visual Audit section component (Experimental)
+// ---------------------------------------------------------------------------
+
+function VisualAuditSection({ url }: { url: string }) {
+  return (
+    <div className="mt-16 border-t border-white/20 pt-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+      <div className="flex items-center gap-3 mb-8">
+        <Image className="h-5 w-5 text-[#FF5500]" />
+        <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">
+          Visual Audit
+        </h2>
+        <span className="text-[10px] font-mono text-[#FF5500] border border-[#FF5500]/30 px-2 py-0.5 uppercase tracking-widest bg-[#FF5500]/10">
+          Experimental
+        </span>
+      </div>
+      <div className="border border-[#FF5500]/30 p-6 sm:p-8 bg-black relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[#FF5500]"></div>
+        <div className="flex items-center gap-3 mb-4">
+          <Camera className="h-5 w-5 text-[#FF5500]" />
+          <h4 className="text-lg font-bold text-white uppercase tracking-widest">
+            Bring Your Own Key (BYOK)
+          </h4>
+        </div>
+        <p className="text-sm font-mono text-zinc-400 leading-relaxed mb-4">
+          Visual Audit captures a full-page screenshot of the target URL and uses Google Gemini Vision to analyze layout, typography, accessibility contrast, and visual hierarchy.
+        </p>
+        <p className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-6">
+          Expected Usage: ~1,500 tokens / audit
+        </p>
+        <div className="p-4 bg-[#FF5500]/10 border border-[#FF5500]/20 flex items-start gap-3">
+          <AlertTriangle className="h-4 w-4 text-[#FF5500] shrink-0 mt-0.5" />
+          <p className="text-xs font-mono text-white">
+            Visual Audit requires your own Gemini API key. Keys are securely stored in your browser's local storage and are never sent to our database.
+          </p>
+        </div>
+        <div className="mt-6 flex gap-4 opacity-50 pointer-events-none">
+          <input
+            type="password"
+            placeholder="Enter Gemini API Key (sk-...)"
+            disabled
+            className="flex-1 bg-zinc-900 border border-white/20 p-3 text-white text-sm font-mono"
+          />
+          <button disabled className="bg-[#FF5500] text-white font-bold py-3 px-6 text-xs uppercase tracking-widest">
+            Run Visual Audit
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -656,6 +813,47 @@ function AuditResultsContent() {
     }
   };
 
+  // --- New Computations ---
+  const categories = [
+    { name: 'Performance', score: report.scores.performance },
+    { name: 'SEO', score: report.scores.seo },
+    { name: 'Accessibility', score: report.scores.accessibility },
+    { name: 'Best Practices', score: report.scores.bestPractices },
+  ];
+  const strongestCategory = categories.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+  const weakestCategory = categories.reduce((prev, current) => (prev.score < current.score) ? prev : current);
+  const scoreDelta = 100 - report.overallScore;
+
+  const topQuickWins = report.recommendations
+    .filter(r => r.impact === 'high')
+    .slice(0, 3);
+
+  const getVerdictDescription = (score: number) => {
+    if (score >= 90) return 'Faster than most audited websites.\nNo major issues detected.';
+    if (score >= 75) return 'Solid foundation.\nMinor improvements available.';
+    if (score >= 50) return 'Suboptimal performance.\nRequires technical attention.';
+    return 'Critical health issues.\nImmediate action recommended.';
+  };
+
+  const getScoreContext = (category: string, score: number) => {
+    if (score >= 90) {
+      if (category === 'Performance') return 'Excellent loading speed with minor optimization opportunities.';
+      if (category === 'SEO') return 'Fully optimized for search engines.';
+      if (category === 'Accessibility') return 'Highly accessible for all users.';
+      return 'Following modern best practices.';
+    }
+    if (score >= 50) {
+      if (category === 'Performance') return 'Average speed. Core Web Vitals need attention.';
+      if (category === 'SEO') return 'Missing key meta tags or structure.';
+      if (category === 'Accessibility') return 'Requires ARIA labels and contrast fixes.';
+      return 'Some outdated practices detected.';
+    }
+    if (category === 'Performance') return 'Critical speed issues impacting user experience.';
+    if (category === 'SEO') return 'Severe indexing and discoverability issues.';
+    if (category === 'Accessibility') return 'Major accessibility violations.';
+    return 'Critical security or convention issues.';
+  };
+
   return (
     <div className="mx-auto max-w-7xl w-full px-4 py-12 sm:px-6 lg:px-8 flex-grow bg-black">
       {/* Header */}
@@ -713,17 +911,83 @@ function AuditResultsContent() {
         </div>
       )}
 
+      {/* Top Section: Executive Summary & Website Preview */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 border border-white/20 p-6 bg-zinc-950/50 flex flex-col justify-center">
+          <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-2">Summary</h3>
+          <p className="text-sm text-zinc-300 leading-relaxed">
+            This website demonstrates {report.overallScore >= 90 ? 'excellent' : report.overallScore >= 75 ? 'good' : 'suboptimal'} technical health. 
+            Its strongest pillar is {strongestCategory.name} ({strongestCategory.score}), while {weakestCategory.name} ({weakestCategory.score}) requires the most attention. 
+            {report.overallScore >= 90 ? ' Only minor optimization opportunities remain.' : ' Focus on resolving the high-impact issues listed below to improve your score.'}
+          </p>
+        </div>
+        
+        {/* Website Preview Card */}
+        <div className="border border-white/20 bg-zinc-950/50 p-6 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <div className="overflow-hidden pr-2">
+              <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-1">Website Preview</h3>
+              <p className="text-sm text-white font-bold truncate max-w-full" title={report.url}>{report.url}</p>
+            </div>
+            <a 
+              href={`https://${report.url}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-[10px] font-mono text-zinc-400 border border-white/10 px-2 py-1 uppercase tracking-widest hover:text-white hover:border-white/30 transition-colors shrink-0"
+            >
+              Open Website
+            </a>
+          </div>
+          <div className="aspect-[16/9] w-full border border-white/10 bg-black overflow-hidden relative group mt-2">
+            {report.screenshotUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img 
+                src={report.screenshotUrl} 
+                alt={`Preview of ${report.url}`} 
+                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
+                <span className="text-2xl mb-2 opacity-20">🌐</span>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase">Preview Unavailable</span>
+                <span className="text-[8px] font-mono text-zinc-600 mt-1 max-w-[80%]">PageSpeed API did not return final-screenshot data</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Scores grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 mt-12 border border-white/20">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 mt-6 border border-white/20">
         {/* Overall Score */}
-        <div className="p-8 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/20 flex flex-col items-center justify-center text-center bg-black">
-          <h3 className="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-4">
+        <div className="p-8 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/20 flex flex-col items-center justify-center text-center bg-zinc-950/50 relative overflow-hidden">
+          <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-6">
             Master Grade
           </h3>
-          <div className="text-[120px] leading-none font-black tracking-tighter text-white">
-            <CountUp value={report.overallScore} duration={2} />
+          
+          <div className="relative flex items-center justify-center mb-6">
+            <svg className="w-48 h-48 transform -rotate-90">
+              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/10" />
+              <circle 
+                cx="96" cy="96" r="88" 
+                stroke="currentColor" 
+                strokeWidth="8" 
+                fill="transparent" 
+                strokeDasharray="552.92" 
+                strokeDashoffset={552.92 - (552.92 * report.overallScore) / 100}
+                className={getScoreColor(report.overallScore)}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 2s ease-out' }}
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <div className="text-6xl leading-none font-black tracking-tighter text-white">
+                <CountUp value={report.overallScore} duration={2} />
+              </div>
+            </div>
           </div>
-          <div className="mt-6">
+
+          <div className="mb-4">
             <div
               className={`px-4 py-1 border text-[10px] font-mono uppercase tracking-widest ${
                 report.overallScore >= 90
@@ -733,21 +997,34 @@ function AuditResultsContent() {
                   : 'border-[#ef4444] text-[#ef4444]'
               }`}
             >
-              {report.overallScore >= 90
-                ? 'EXCELLENT'
-                : report.overallScore >= 75
-                ? 'GOOD'
-                : report.overallScore >= 50
-                ? 'SUBOPTIMAL'
-                : 'CRITICAL'}
+              {report.overallScore >= 90 ? 'EXCELLENT' : report.overallScore >= 75 ? 'GOOD' : report.overallScore >= 50 ? 'SUBOPTIMAL' : 'CRITICAL'}
             </div>
+          </div>
+
+          <p className="text-xs text-zinc-400 font-mono whitespace-pre-line leading-relaxed mb-8">
+            {getVerdictDescription(report.overallScore)}
+          </p>
+
+          <div className="w-full grid grid-cols-3 gap-2 border-t border-white/10 pt-6">
+             <div className="text-center">
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-tighter mb-1 truncate">Strongest</p>
+                <p className="text-xs text-white font-bold">{strongestCategory.name}</p>
+             </div>
+             <div className="text-center border-l border-white/10">
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-tighter mb-1 truncate">Needs Work</p>
+                <p className="text-xs text-[#FF5500] font-bold">{weakestCategory.name}</p>
+             </div>
+             <div className="text-center border-l border-white/10">
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-tighter mb-1 truncate">Delta</p>
+                <p className="text-xs text-zinc-300 font-bold">-{scoreDelta} pts</p>
+             </div>
           </div>
         </div>
 
         {/* Four pillars */}
         <div className="lg:col-span-2 grid grid-cols-2 gap-0 bg-black">
           {/* Performance */}
-          <div className="p-6 md:p-8 border-b border-r border-white/20 flex flex-col justify-between hover:bg-white/5 transition-colors">
+          <div className="p-6 md:p-8 border-b border-r border-white/10 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
             <div className="flex justify-between items-start mb-6">
               <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Performance
@@ -755,17 +1032,22 @@ function AuditResultsContent() {
               <Zap className={`h-4 w-4 ${getScoreColor(report.scores.performance)}`} />
             </div>
             <div>
-              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.performance)}`}>
-                <CountUp value={report.scores.performance} />
-              </span>
-              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
-                {getScoreLabel(report.scores.performance)}
+              <div className="flex items-end gap-3 mb-2">
+                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.performance)}`}>
+                  <CountUp value={report.scores.performance} />
+                </span>
+                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.performance)} border-current hidden sm:block`}>
+                  {getScoreLabel(report.scores.performance)}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
+                {getScoreContext('Performance', report.scores.performance)}
               </p>
             </div>
           </div>
           
           {/* SEO */}
-          <div className="p-6 md:p-8 border-b border-white/20 flex flex-col justify-between hover:bg-white/5 transition-colors">
+          <div className="p-6 md:p-8 border-b border-white/10 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
             <div className="flex justify-between items-start mb-6">
               <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Search Engine
@@ -773,17 +1055,22 @@ function AuditResultsContent() {
               <Search className={`h-4 w-4 ${getScoreColor(report.scores.seo)}`} />
             </div>
             <div>
-              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.seo)}`}>
-                <CountUp value={report.scores.seo} />
-              </span>
-              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
-                {getScoreLabel(report.scores.seo)}
+              <div className="flex items-end gap-3 mb-2">
+                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.seo)}`}>
+                  <CountUp value={report.scores.seo} />
+                </span>
+                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.seo)} border-current hidden sm:block`}>
+                  {getScoreLabel(report.scores.seo)}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
+                {getScoreContext('SEO', report.scores.seo)}
               </p>
             </div>
           </div>
 
           {/* Accessibility */}
-          <div className="p-6 md:p-8 border-r border-white/20 flex flex-col justify-between hover:bg-white/5 transition-colors">
+          <div className="p-6 md:p-8 border-r border-white/10 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
             <div className="flex justify-between items-start mb-6">
               <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Accessibility
@@ -791,17 +1078,22 @@ function AuditResultsContent() {
               <Accessibility className={`h-4 w-4 ${getScoreColor(report.scores.accessibility)}`} />
             </div>
             <div>
-              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.accessibility)}`}>
-                <CountUp value={report.scores.accessibility} />
-              </span>
-              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
-                {getScoreLabel(report.scores.accessibility)}
+              <div className="flex items-end gap-3 mb-2">
+                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.accessibility)}`}>
+                  <CountUp value={report.scores.accessibility} />
+                </span>
+                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.accessibility)} border-current hidden sm:block`}>
+                  {getScoreLabel(report.scores.accessibility)}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
+                {getScoreContext('Accessibility', report.scores.accessibility)}
               </p>
             </div>
           </div>
 
           {/* Best Practices */}
-          <div className="p-6 md:p-8 flex flex-col justify-between hover:bg-white/5 transition-colors">
+          <div className="p-6 md:p-8 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
             <div className="flex justify-between items-start mb-6">
               <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
                 Best Practices
@@ -809,16 +1101,42 @@ function AuditResultsContent() {
               <ShieldCheck className={`h-4 w-4 ${getScoreColor(report.scores.bestPractices)}`} />
             </div>
             <div>
-              <span className={`text-5xl font-black block leading-none ${getScoreColor(report.scores.bestPractices)}`}>
-                <CountUp value={report.scores.bestPractices} />
-              </span>
-              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-3">
-                {getScoreLabel(report.scores.bestPractices)}
+              <div className="flex items-end gap-3 mb-2">
+                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.bestPractices)}`}>
+                  <CountUp value={report.scores.bestPractices} />
+                </span>
+                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.bestPractices)} border-current hidden sm:block`}>
+                  {getScoreLabel(report.scores.bestPractices)}
+                </span>
+              </div>
+              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
+                {getScoreContext('Best Practices', report.scores.bestPractices)}
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Immediate Quick Wins */}
+      {topQuickWins.length > 0 && (
+        <div className="mt-8 border border-white/20 bg-zinc-950/50 p-6 sm:p-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Zap className="h-5 w-5 text-[#FF5500]" />
+            <h3 className="text-xl font-extrabold text-white uppercase tracking-tight">Quick Wins</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {topQuickWins.map((rec) => (
+              <div key={rec.id} className="border border-white/10 bg-black p-5 hover:border-[#FF5500]/50 transition-colors">
+                <div className="text-[10px] font-mono text-[#FF5500] border border-[#FF5500]/30 bg-[#FF5500]/5 inline-block px-2 py-1 mb-3 uppercase tracking-widest">
+                  Est. Impact: {rec.improvement}
+                </div>
+                <h4 className="text-sm font-bold text-white mb-2">{rec.title}</h4>
+                <p className="text-xs text-zinc-400 font-mono leading-relaxed line-clamp-2">{rec.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Core Vectors */}
       <div className="mt-16 border-t border-white/20 pt-8">
@@ -874,6 +1192,9 @@ function AuditResultsContent() {
 
       {/* Gemini AI Analysis — renders independently after PageSpeed data arrives */}
       <GeminiSection report={report} onAnalysisReady={setGeminiAnalysisForPdf} />
+
+      {/* Experimental Visual Audit */}
+      <VisualAuditSection url={report.url} />
 
       {/* Lighthouse Diagnostics & Actions */}
       <div className="mt-16 border-t border-white/20 pt-8">

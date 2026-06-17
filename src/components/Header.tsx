@@ -1,14 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
-import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
+
+const links = [
+  { name: 'Features', path: '/#features' },
+  { name: 'How It Works', path: '/#how-it-works' },
+  { name: 'Examples', path: '/examples' },
+  { name: 'Docs', path: '/docs' }
+];
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   const pathname = usePathname();
   const { scrollY } = useScroll();
 
@@ -16,12 +22,56 @@ export default function Header() {
     setScrolled(latest > 20);
   });
 
-  const links = [
-    { name: 'Features', path: '/#features' },
-    { name: 'How It Works', path: '/#how-it-works' },
-    { name: 'Examples', path: '/examples' },
-    { name: 'Docs', path: '/docs' }
-  ];
+  // --- Transform-based indicator ---
+  const navRef = useRef<HTMLElement>(null);
+  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const indicatorRef = useRef<HTMLDivElement>(null);
+
+  // Track which link the indicator should follow: hover takes priority, then active route
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const activeIndex = links.findIndex((link) => link.path === pathname);
+
+  // The "target" index: hover wins, otherwise fall back to active route
+  const targetIndex = hoveredIndex !== null ? hoveredIndex : (activeIndex >= 0 ? activeIndex : null);
+
+  const positionIndicator = useCallback(() => {
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    if (!nav || !indicator) return;
+
+    if (targetIndex === null) {
+      indicator.style.opacity = '0';
+      return;
+    }
+
+    const targetEl = linkRefs.current[targetIndex];
+    if (!targetEl) {
+      indicator.style.opacity = '0';
+      return;
+    }
+
+    const navRect = nav.getBoundingClientRect();
+    const targetRect = targetEl.getBoundingClientRect();
+
+    const x = targetRect.left - navRect.left;
+    const width = targetRect.width;
+
+    indicator.style.opacity = '1';
+    indicator.style.transform = `translateX(${x}px)`;
+    indicator.style.width = `${width}px`;
+  }, [targetIndex]);
+
+  // Reposition whenever targetIndex changes
+  useEffect(() => {
+    positionIndicator();
+  }, [positionIndicator]);
+
+  // Also reposition on window resize
+  useEffect(() => {
+    window.addEventListener('resize', positionIndicator);
+    return () => window.removeEventListener('resize', positionIndicator);
+  }, [positionIndicator]);
 
   return (
     <motion.header 
@@ -41,33 +91,36 @@ export default function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-1">
-          {links.map((link) => {
-            const isActive = pathname === link.path;
+        <nav
+          ref={navRef}
+          className="hidden md:flex items-center space-x-1 relative"
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
+          {/* Single persistent indicator — never remounts */}
+          <div
+            ref={indicatorRef}
+            className="absolute top-0 left-0 h-full rounded-sm pointer-events-none"
+            style={{
+              opacity: 0,
+              willChange: 'transform, width',
+              transition: 'transform 0.2s ease-out, width 0.2s ease-out, opacity 0.15s ease-out',
+            }}
+          >
+            <div className="absolute inset-0 bg-white/5 rounded-sm" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-[#FF5500]" />
+          </div>
+
+          {links.map((link, i) => {
+            const isActive = link.path === pathname;
             return (
               <Link
                 key={link.path}
+                ref={(el) => { linkRefs.current[i] = el; }}
                 href={link.path}
-                onMouseEnter={() => setHoveredPath(link.path)}
-                onMouseLeave={() => setHoveredPath(null)}
-                className={`relative px-4 py-2 text-sm font-medium transition-colors ${isActive ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
+                onMouseEnter={() => setHoveredIndex(i)}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors duration-200 ${isActive ? 'text-white' : 'text-zinc-400 hover:text-white'}`}
               >
-                <span className="relative z-10">{link.name}</span>
-                {hoveredPath === link.path && (
-                  <motion.div
-                    layoutId="navbar-hover"
-                    className="absolute inset-0 bg-white/5 rounded-sm -z-0"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      layout: { type: "tween", ease: "easeOut", duration: 0.2 },
-                      opacity: { duration: 0.15 }
-                    }}
-                  >
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-[#FF5500]"></div>
-                  </motion.div>
-                )}
+                {link.name}
               </Link>
             );
           })}
