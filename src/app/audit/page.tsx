@@ -21,6 +21,11 @@ import {
   Loader2,
   Image,
   Camera,
+  ExternalLink,
+  Globe,
+  Lock,
+  Monitor,
+  Smartphone,
 } from 'lucide-react';
 import { AuditReport, ScoreMetric, GeminiAnalysis, GeminiIssue } from '@/types/audit';
 
@@ -243,7 +248,7 @@ function GeminiSection({
             {isRateLimit && ' To ensure stability, the global AI pool limits concurrent requests. You can wait a minute or provide your own API key to bypass this.'}
           </p>
 
-          {needsKey ? (
+          {needsKey && (
             <div className="space-y-4 max-w-md">
               <input
                 type="password"
@@ -252,29 +257,14 @@ function GeminiSection({
                 onChange={(e) => setCustomKey(e.target.value)}
                 className="w-full bg-zinc-900 border border-white/20 p-3 text-white text-sm font-mono focus:border-[#FF5500] focus:outline-none transition-colors"
               />
-              <div className="flex gap-4">
-                <button
-                  onClick={() => runAnalysis(customKey)}
-                  disabled={!customKey}
-                  className="flex-1 bg-[#FF5500] hover:bg-[#E64C00] disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3 text-xs uppercase tracking-widest transition-colors"
-                >
-                  Retry Analysis
-                </button>
-                <button
-                  onClick={handleUseFallback}
-                  className="flex-1 bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold py-3 text-xs uppercase tracking-widest transition-colors"
-                >
-                  Use Fallback
-                </button>
-              </div>
+              <button
+                onClick={() => runAnalysis(customKey)}
+                disabled={!customKey}
+                className="w-full bg-[#FF5500] hover:bg-[#E64C00] disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold py-3 text-xs uppercase tracking-widest transition-colors"
+              >
+                Retry Analysis
+              </button>
             </div>
-          ) : (
-            <button
-              onClick={handleUseFallback}
-              className="bg-white/5 hover:bg-white/10 border border-white/20 text-white font-bold py-3 px-6 text-xs uppercase tracking-widest transition-colors"
-            >
-              Generate Fallback Report
-            </button>
           )}
         </div>
       </div>
@@ -291,11 +281,17 @@ function GeminiSection({
   };
 
   return (
-    <div className="mt-16 border-t border-white/20 pt-8">
-      {/* Section header */}
+    <div className="mt-16 pt-10 relative">
+      {/* AI Section separator with gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#FF5500]/50 to-transparent"></div>
+
+      {/* Section header — AI branding */}
       <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-[#FF5500]" />
+          <div className="relative">
+            <Sparkles className="h-6 w-6 text-[#FF5500]" />
+            <div className="absolute -inset-1 bg-[#FF5500]/20 rounded-full blur-sm"></div>
+          </div>
           <h2 className="text-3xl font-extrabold text-white uppercase tracking-tight">
             AI Analysis
           </h2>
@@ -504,6 +500,7 @@ function AuditResultsContent() {
 
   const [inputUrl, setInputUrl] = useState('');
   const [formError, setFormError] = useState('');
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
 
   const loadingSteps = [
     { text: 'Analyzing Performance...', time: '0.45s' },
@@ -856,50 +853,99 @@ function AuditResultsContent() {
 
   return (
     <div className="mx-auto max-w-7xl w-full px-4 py-12 sm:px-6 lg:px-8 flex-grow bg-black">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between pb-8 border-b border-white/20 gap-4">
-        <div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-white transition-colors uppercase mb-4"
-          >
-            <ArrowLeft className="h-3 w-3" /> Back to System
-          </Link>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tighter text-white uppercase">
-            Engineering Report
-          </h1>
-          <p className="text-xs text-[#FF5500] font-mono mt-2">
-            TARGET: {report.url} &bull; {report.date}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Export PDF */}
-          <button
-            id="export-pdf-btn"
-            onClick={handleExportPdf}
-            disabled={pdfLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-[#FF5500] hover:bg-[#E64C00] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-white transition-colors uppercase"
-            title="Download professional PDF report"
-          >
-            {pdfLoading
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <FileDown className="h-3.5 w-3.5" />}
-            {pdfLoading ? 'Generating...' : 'Export PDF'}
-          </button>
+      {/* ================================================================== */}
+      {/* HERO HEADER — Score + Title + Meta visible immediately             */}
+      {/* ================================================================== */}
+      <div className="relative pb-10 border-b border-white/10">
+        {/* Subtle radial glow behind score */}
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#FF5500]/[0.04] rounded-full blur-[100px] pointer-events-none"></div>
 
-          {/* Re-execute */}
-          <button
-            onClick={() => {
-              setLoading(true);
-              setLoadingStep(0);
-              router.push(
-                `/audit?url=${encodeURIComponent(report.url)}&refresh=${Date.now()}`
-              );
-            }}
-            className="flex items-center gap-2 px-4 py-2 border border-white/20 hover:border-[#FF5500] hover:text-[#FF5500] text-xs font-mono text-white transition-colors uppercase"
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Re-execute
-          </button>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-white transition-colors uppercase mb-6"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back to System
+        </Link>
+
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8 lg:gap-12">
+          {/* Score Circle — Primary KPI */}
+          <div className="relative flex-shrink-0">
+            <svg className="w-32 h-32 sm:w-36 sm:h-36 transform -rotate-90">
+              <circle cx="50%" cy="50%" r="46%" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/[0.06]" />
+              <circle
+                cx="50%" cy="50%" r="46%"
+                stroke="currentColor"
+                strokeWidth="6"
+                fill="transparent"
+                strokeDasharray="289"
+                strokeDashoffset={289 - (289 * report.overallScore) / 100}
+                className={getScoreColor(report.overallScore)}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 2s ease-out' }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-5xl sm:text-6xl leading-none font-black tracking-tighter text-white">
+                <CountUp value={report.overallScore} duration={2} />
+              </div>
+              <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mt-1">/ 100</span>
+            </div>
+          </div>
+
+          {/* Title + Meta */}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tighter text-white uppercase">
+                Engineering Report
+              </h1>
+              <span className={`px-3 py-1 border text-[10px] font-mono uppercase tracking-widest ${
+                report.overallScore >= 90
+                  ? 'border-[#22c55e] text-[#22c55e] bg-[#22c55e]/5'
+                  : report.overallScore >= 50
+                  ? 'border-[#f97316] text-[#f97316] bg-[#f97316]/5'
+                  : 'border-[#ef4444] text-[#ef4444] bg-[#ef4444]/5'
+              }`}>
+                {report.overallScore >= 90 ? 'Excellent' : report.overallScore >= 75 ? 'Good' : report.overallScore >= 50 ? 'Suboptimal' : 'Critical'}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-zinc-400">
+              <span className="text-[#FF5500]">{report.url}</span>
+              <span className="text-zinc-600">·</span>
+              <span>{report.date}</span>
+              <span className="text-zinc-600">·</span>
+              <span>Strongest: <span className="text-white">{strongestCategory.name} ({strongestCategory.score})</span></span>
+              <span className="text-zinc-600">·</span>
+              <span>Weakest: <span className="text-[#FF5500]">{weakestCategory.name} ({weakestCategory.score})</span></span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              id="export-pdf-btn"
+              onClick={handleExportPdf}
+              disabled={pdfLoading}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#FF5500] hover:bg-[#E64C00] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-white transition-colors uppercase"
+              title="Download professional PDF report"
+            >
+              {pdfLoading
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <FileDown className="h-3.5 w-3.5" />}
+              {pdfLoading ? 'Generating...' : 'Export PDF'}
+            </button>
+            <button
+              onClick={() => {
+                setLoading(true);
+                setLoadingStep(0);
+                router.push(
+                  `/audit?url=${encodeURIComponent(report.url)}&refresh=${Date.now()}`
+                );
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 border border-white/20 hover:border-[#FF5500] hover:text-[#FF5500] text-xs font-mono text-white transition-colors uppercase"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Re-execute
+            </button>
+          </div>
         </div>
       </div>
 
@@ -911,210 +957,158 @@ function AuditResultsContent() {
         </div>
       )}
 
-      {/* Top Section: Executive Summary & Website Preview */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 border border-white/20 p-6 bg-zinc-950/50 flex flex-col justify-center">
-          <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-2">Summary</h3>
-          <p className="text-sm text-zinc-300 leading-relaxed">
-            This website demonstrates {report.overallScore >= 90 ? 'excellent' : report.overallScore >= 75 ? 'good' : 'suboptimal'} technical health. 
-            Its strongest pillar is {strongestCategory.name} ({strongestCategory.score}), while {weakestCategory.name} ({weakestCategory.score}) requires the most attention. 
-            {report.overallScore >= 90 ? ' Only minor optimization opportunities remain.' : ' Focus on resolving the high-impact issues listed below to improve your score.'}
+      {/* ================================================================== */}
+      {/* EXECUTIVE SUMMARY + WEBSITE PREVIEW — Compact, data-rich           */}
+      {/* ================================================================== */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Executive Summary — compact */}
+        <div className="lg:col-span-2 border border-white/10 bg-gradient-to-b from-zinc-950 to-black p-6 flex flex-col gap-4">
+          <h2 className="text-lg font-extrabold text-white uppercase tracking-tight flex items-center gap-2">
+            <span className="w-1 h-4 bg-[#FF5500] flex-shrink-0"></span>
+            Executive Summary
+          </h2>
+          <p className="text-sm text-zinc-400 leading-relaxed flex-1">
+            This website demonstrates {report.overallScore >= 90 ? 'excellent' : report.overallScore >= 75 ? 'good' : 'suboptimal'} technical health.
+            {report.overallScore >= 90 ? ' Only minor optimization opportunities remain.' : ' Focus on resolving the high-impact issues below.'}
           </p>
-        </div>
-        
-        {/* Website Preview Card */}
-        <div className="border border-white/20 bg-zinc-950/50 p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-4">
-            <div className="overflow-hidden pr-2">
-              <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-1">Website Preview</h3>
-              <p className="text-sm text-white font-bold truncate max-w-full" title={report.url}>{report.url}</p>
+          <div className="grid grid-cols-3 gap-3 pt-3 border-t border-white/[0.06]">
+            <div>
+              <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Verdict</p>
+              <p className={`text-sm font-bold ${
+                report.overallScore >= 90 ? 'text-[#22c55e]' : report.overallScore >= 50 ? 'text-[#f97316]' : 'text-[#ef4444]'
+              }`}>
+                {report.overallScore >= 90 ? 'Excellent' : report.overallScore >= 75 ? 'Good' : report.overallScore >= 50 ? 'Suboptimal' : 'Critical'}
+              </p>
             </div>
-            <a 
-              href={`https://${report.url}`} 
-              target="_blank" 
+            <div>
+              <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Strongest</p>
+              <p className="text-sm font-bold text-white">{strongestCategory.name}</p>
+            </div>
+            <div>
+              <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Weakest</p>
+              <p className="text-sm font-bold text-[#FF5500]">{weakestCategory.name}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Website Preview — Browser Chrome with Desktop/Mobile tabs */}
+        <div className="lg:col-span-3 browser-preview-card group">
+          {/* Browser Title Bar with Desktop/Mobile toggle */}
+          <div className="flex items-center justify-between px-3 py-2 bg-zinc-900/80 border-b border-white/10">
+            <div className="flex items-center gap-1.5">
+              <span className="w-[10px] h-[10px] rounded-full bg-[#FF5F57] border border-[#E0443E]"></span>
+              <span className="w-[10px] h-[10px] rounded-full bg-[#FEBC2E] border border-[#DEA123]"></span>
+              <span className="w-[10px] h-[10px] rounded-full bg-[#28C840] border border-[#1AAB29]"></span>
+            </div>
+            {/* Desktop / Mobile tabs */}
+            <div className="flex items-center border border-white/10 rounded-[4px] overflow-hidden">
+              <button
+                onClick={() => setPreviewMode('desktop')}
+                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-mono uppercase tracking-widest transition-colors ${
+                  previewMode === 'desktop'
+                    ? 'bg-white/10 text-white'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Monitor className="h-3 w-3" /> Desktop
+              </button>
+              <button
+                onClick={() => setPreviewMode('mobile')}
+                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-mono uppercase tracking-widest transition-colors border-l border-white/10 ${
+                  previewMode === 'mobile'
+                    ? 'bg-white/10 text-white'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Smartphone className="h-3 w-3" /> Mobile
+              </button>
+            </div>
+            <div className="w-[46px]"></div>
+          </div>
+
+          {/* Address Bar */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-950/80 border-b border-white/10">
+            <div className="flex-1 flex items-center gap-2 bg-black/60 border border-white/[0.06] rounded-[4px] px-2.5 py-1 min-w-0">
+              <Lock className="h-3 w-3 text-zinc-500 flex-shrink-0" />
+              <span className="text-[11px] font-mono text-zinc-300 truncate" title={report.url}>
+                {report.url}
+              </span>
+            </div>
+            <a
+              href={`https://${report.url}`}
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] font-mono text-zinc-400 border border-white/10 px-2 py-1 uppercase tracking-widest hover:text-white hover:border-white/30 transition-colors shrink-0"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF5500] hover:bg-[#E64C00] text-white text-[9px] font-mono uppercase tracking-widest transition-colors flex-shrink-0 rounded-[3px]"
             >
-              Open Website
+              Open <ExternalLink className="h-2.5 w-2.5" />
             </a>
           </div>
-          <div className="aspect-[16/9] w-full border border-white/10 bg-black overflow-hidden relative group mt-2">
+
+          {/* Screenshot Viewport */}
+          <a
+            href={`https://${report.url}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block relative bg-black overflow-hidden flex items-center justify-center cursor-pointer"
+            style={{ aspectRatio: previewMode === 'desktop' ? '16 / 10' : '9 / 16', maxHeight: previewMode === 'mobile' ? '360px' : undefined }}
+          >
             {report.screenshotUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img 
-                src={report.screenshotUrl} 
-                alt={`Preview of ${report.url}`} 
-                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+              <img
+                src={report.screenshotUrl}
+                alt={`Preview of ${report.url}`}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  console.log(`[Screenshot Debug] Source Resolution: ${img.naturalWidth}x${img.naturalHeight}px`);
+                  console.log(`[Screenshot Debug] Rendered Resolution: ${img.width}x${img.height}px`);
+                  console.log(`[Screenshot Debug] Provider: Google PageSpeed Insights ('final-screenshot')`);
+                }}
+                className={`w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.03] ${
+                  previewMode === 'mobile' ? 'object-contain' : 'object-cover object-top'
+                }`}
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
-                <span className="text-2xl mb-2 opacity-20">🌐</span>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase">Preview Unavailable</span>
-                <span className="text-[8px] font-mono text-zinc-600 mt-1 max-w-[80%]">PageSpeed API did not return final-screenshot data</span>
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2 py-12">
+                <Globe className="h-8 w-8 text-zinc-700" />
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Preview Unavailable</span>
               </div>
             )}
-          </div>
+            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
+          </a>
         </div>
       </div>
 
-      {/* Scores grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 mt-6 border border-white/20">
-        {/* Overall Score */}
-        <div className="p-8 lg:p-12 border-b lg:border-b-0 lg:border-r border-white/20 flex flex-col items-center justify-center text-center bg-zinc-950/50 relative overflow-hidden">
-          <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-6">
-            Master Grade
-          </h3>
-          
-          <div className="relative flex items-center justify-center mb-6">
-            <svg className="w-48 h-48 transform -rotate-90">
-              <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/10" />
-              <circle 
-                cx="96" cy="96" r="88" 
-                stroke="currentColor" 
-                strokeWidth="8" 
-                fill="transparent" 
-                strokeDasharray="552.92" 
-                strokeDashoffset={552.92 - (552.92 * report.overallScore) / 100}
-                className={getScoreColor(report.overallScore)}
-                strokeLinecap="round"
-                style={{ transition: 'stroke-dashoffset 2s ease-out' }}
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-              <div className="text-6xl leading-none font-black tracking-tighter text-white">
-                <CountUp value={report.overallScore} duration={2} />
-              </div>
+      {/* ================================================================== */}
+      {/* FOUR PILLAR SCORES — Streamlined horizontal strip                  */}
+      {/* ================================================================== */}
+      <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-0 border border-white/10">
+        {[
+          { name: 'Performance', score: report.scores.performance, icon: <Zap className={`h-4 w-4 ${getScoreColor(report.scores.performance)}`} />, ctx: getScoreContext('Performance', report.scores.performance) },
+          { name: 'Search Engine', score: report.scores.seo, icon: <Search className={`h-4 w-4 ${getScoreColor(report.scores.seo)}`} />, ctx: getScoreContext('SEO', report.scores.seo) },
+          { name: 'Accessibility', score: report.scores.accessibility, icon: <Accessibility className={`h-4 w-4 ${getScoreColor(report.scores.accessibility)}`} />, ctx: getScoreContext('Accessibility', report.scores.accessibility) },
+          { name: 'Best Practices', score: report.scores.bestPractices, icon: <ShieldCheck className={`h-4 w-4 ${getScoreColor(report.scores.bestPractices)}`} />, ctx: getScoreContext('Best Practices', report.scores.bestPractices) },
+        ].map((pillar, i) => (
+          <div
+            key={pillar.name}
+            className={`p-5 md:p-6 flex flex-col justify-between hover:bg-white/[0.03] transition-colors bg-zinc-950/30 ${
+              i < 3 ? 'border-r border-white/[0.06]' : ''
+            } ${i < 2 ? 'border-b lg:border-b-0 border-white/[0.06]' : ''}`}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{pillar.name}</h4>
+              {pillar.icon}
             </div>
+            <div className="flex items-end gap-2 mb-1.5">
+              <span className={`text-3xl sm:text-4xl font-black leading-none ${getScoreColor(pillar.score)}`}>
+                <CountUp value={pillar.score} />
+              </span>
+              <span className={`text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border ${getScoreColor(pillar.score)} border-current mb-1 hidden sm:block`}>
+                {getScoreLabel(pillar.score)}
+              </span>
+            </div>
+            <p className="text-[10px] font-mono text-zinc-600 leading-relaxed line-clamp-2 mt-1">{pillar.ctx}</p>
           </div>
-
-          <div className="mb-4">
-            <div
-              className={`px-4 py-1 border text-[10px] font-mono uppercase tracking-widest ${
-                report.overallScore >= 90
-                  ? 'border-[#22c55e] text-[#22c55e]'
-                  : report.overallScore >= 50
-                  ? 'border-[#f97316] text-[#f97316]'
-                  : 'border-[#ef4444] text-[#ef4444]'
-              }`}
-            >
-              {report.overallScore >= 90 ? 'EXCELLENT' : report.overallScore >= 75 ? 'GOOD' : report.overallScore >= 50 ? 'SUBOPTIMAL' : 'CRITICAL'}
-            </div>
-          </div>
-
-          <p className="text-xs text-zinc-400 font-mono whitespace-pre-line leading-relaxed mb-8">
-            {getVerdictDescription(report.overallScore)}
-          </p>
-
-          <div className="w-full grid grid-cols-3 gap-2 border-t border-white/10 pt-6">
-             <div className="text-center">
-                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-tighter mb-1 truncate">Strongest</p>
-                <p className="text-xs text-white font-bold">{strongestCategory.name}</p>
-             </div>
-             <div className="text-center border-l border-white/10">
-                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-tighter mb-1 truncate">Needs Work</p>
-                <p className="text-xs text-[#FF5500] font-bold">{weakestCategory.name}</p>
-             </div>
-             <div className="text-center border-l border-white/10">
-                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-tighter mb-1 truncate">Delta</p>
-                <p className="text-xs text-zinc-300 font-bold">-{scoreDelta} pts</p>
-             </div>
-          </div>
-        </div>
-
-        {/* Four pillars */}
-        <div className="lg:col-span-2 grid grid-cols-2 gap-0 bg-black">
-          {/* Performance */}
-          <div className="p-6 md:p-8 border-b border-r border-white/10 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
-            <div className="flex justify-between items-start mb-6">
-              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                Performance
-              </h4>
-              <Zap className={`h-4 w-4 ${getScoreColor(report.scores.performance)}`} />
-            </div>
-            <div>
-              <div className="flex items-end gap-3 mb-2">
-                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.performance)}`}>
-                  <CountUp value={report.scores.performance} />
-                </span>
-                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.performance)} border-current hidden sm:block`}>
-                  {getScoreLabel(report.scores.performance)}
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
-                {getScoreContext('Performance', report.scores.performance)}
-              </p>
-            </div>
-          </div>
-          
-          {/* SEO */}
-          <div className="p-6 md:p-8 border-b border-white/10 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
-            <div className="flex justify-between items-start mb-6">
-              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                Search Engine
-              </h4>
-              <Search className={`h-4 w-4 ${getScoreColor(report.scores.seo)}`} />
-            </div>
-            <div>
-              <div className="flex items-end gap-3 mb-2">
-                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.seo)}`}>
-                  <CountUp value={report.scores.seo} />
-                </span>
-                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.seo)} border-current hidden sm:block`}>
-                  {getScoreLabel(report.scores.seo)}
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
-                {getScoreContext('SEO', report.scores.seo)}
-              </p>
-            </div>
-          </div>
-
-          {/* Accessibility */}
-          <div className="p-6 md:p-8 border-r border-white/10 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
-            <div className="flex justify-between items-start mb-6">
-              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                Accessibility
-              </h4>
-              <Accessibility className={`h-4 w-4 ${getScoreColor(report.scores.accessibility)}`} />
-            </div>
-            <div>
-              <div className="flex items-end gap-3 mb-2">
-                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.accessibility)}`}>
-                  <CountUp value={report.scores.accessibility} />
-                </span>
-                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.accessibility)} border-current hidden sm:block`}>
-                  {getScoreLabel(report.scores.accessibility)}
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
-                {getScoreContext('Accessibility', report.scores.accessibility)}
-              </p>
-            </div>
-          </div>
-
-          {/* Best Practices */}
-          <div className="p-6 md:p-8 flex flex-col justify-between hover:bg-white/5 transition-colors bg-zinc-950/30">
-            <div className="flex justify-between items-start mb-6">
-              <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest">
-                Best Practices
-              </h4>
-              <ShieldCheck className={`h-4 w-4 ${getScoreColor(report.scores.bestPractices)}`} />
-            </div>
-            <div>
-              <div className="flex items-end gap-3 mb-2">
-                <span className={`text-4xl sm:text-5xl font-black leading-none ${getScoreColor(report.scores.bestPractices)}`}>
-                  <CountUp value={report.scores.bestPractices} />
-                </span>
-                <span className={`text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border ${getScoreColor(report.scores.bestPractices)} border-current hidden sm:block`}>
-                  {getScoreLabel(report.scores.bestPractices)}
-                </span>
-              </div>
-              <p className="text-[11px] font-mono text-zinc-500 mt-2 leading-relaxed h-8 line-clamp-2">
-                {getScoreContext('Best Practices', report.scores.bestPractices)}
-              </p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Immediate Quick Wins */}
@@ -1139,8 +1133,10 @@ function AuditResultsContent() {
       )}
 
       {/* Core Vectors */}
-      <div className="mt-16 border-t border-white/20 pt-8">
-        <h3 className="text-2xl font-extrabold text-white uppercase tracking-tight mb-6">
+      <div className="mt-14 pt-8 relative">
+        <div className="absolute top-0 left-0 right-0 section-divider-gradient"></div>
+        <h3 className="text-2xl font-extrabold text-white uppercase tracking-tight mb-6 flex items-center gap-2">
+          <span className="w-1 h-5 bg-white/30 flex-shrink-0"></span>
           Core Vectors
         </h3>
         <div className="grid grid-cols-1 border border-white/20">
@@ -1197,7 +1193,8 @@ function AuditResultsContent() {
       <VisualAuditSection url={report.url} />
 
       {/* Lighthouse Diagnostics & Actions */}
-      <div className="mt-16 border-t border-white/20 pt-8">
+      <div className="mt-14 pt-8 relative">
+        <div className="absolute top-0 left-0 right-0 section-divider-gradient"></div>
         <div className="flex flex-col md:flex-row items-start justify-between mb-8">
           <div>
             <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">
