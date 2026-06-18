@@ -223,18 +223,36 @@ async function handleAudit(url: string | null): Promise<NextResponse> {
     `&strategy=mobile` +
     (apiKey ? `&key=${apiKey}` : '');
 
+  const desktopEndpoint =
+    `https://pagespeedonline.googleapis.com/pagespeedonline/v5/runPagespeed` +
+    `?url=${encodeURIComponent(targetUrl)}` +
+    `&category=performance` +
+    `&strategy=desktop` +
+    (apiKey ? `&key=${apiKey}` : '');
+
   // 40-second timeout — PageSpeed can be slow
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 40_000);
 
   try {
-    const response = await fetch(apiEndpoint, {
-      signal: controller.signal,
-      // Opt out of Next.js fetch caching so every request is fresh
-      cache: 'no-store',
-    });
+    const [mobileResult, desktopResult] = await Promise.allSettled([
+      fetch(apiEndpoint, {
+        signal: controller.signal,
+        cache: 'no-store',
+      }),
+      fetch(desktopEndpoint, {
+        signal: controller.signal,
+        cache: 'no-store',
+      })
+    ]);
 
     clearTimeout(timeoutId);
+
+    if (mobileResult.status === 'rejected') {
+      throw mobileResult.reason;
+    }
+
+    const response = mobileResult.value;
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -269,6 +287,20 @@ async function handleAudit(url: string | null): Promise<NextResponse> {
     }
 
     const report = mapLighthouseResponse(targetUrl, data);
+
+    // Try to extract desktop screenshot
+    if (desktopResult.status === 'fulfilled' && desktopResult.value.ok) {
+      try {
+        const desktopData = await desktopResult.value.json();
+        const desktopScreenshot = desktopData.lighthouseResult?.audits?.['final-screenshot']?.details?.data;
+        if (desktopScreenshot) {
+          report.desktopScreenshotUrl = desktopScreenshot;
+          console.log(`[audit] Successfully extracted desktop screenshot.`);
+        }
+      } catch {
+        // Ignore JSON error for secondary request
+      }
+    }
 
     return NextResponse.json(report, {
       headers: {

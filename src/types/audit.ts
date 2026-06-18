@@ -42,6 +42,7 @@ export interface AuditReport {
   };
   recommendations: Recommendation[];
   screenshotUrl?: string;
+  desktopScreenshotUrl?: string;
 }
 
 // ---------------------------------------------------------------------------

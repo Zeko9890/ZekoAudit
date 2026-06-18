@@ -960,18 +960,20 @@ function AuditResultsContent() {
       {/* ================================================================== */}
       {/* EXECUTIVE SUMMARY + WEBSITE PREVIEW — Compact, data-rich           */}
       {/* ================================================================== */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Executive Summary — compact */}
-        <div className="lg:col-span-2 border border-white/10 bg-gradient-to-b from-zinc-950 to-black p-6 flex flex-col gap-4">
-          <h2 className="text-lg font-extrabold text-white uppercase tracking-tight flex items-center gap-2">
-            <span className="w-1 h-4 bg-[#FF5500] flex-shrink-0"></span>
-            Executive Summary
-          </h2>
-          <p className="text-sm text-zinc-400 leading-relaxed flex-1">
-            This website demonstrates {report.overallScore >= 90 ? 'excellent' : report.overallScore >= 75 ? 'good' : 'suboptimal'} technical health.
-            {report.overallScore >= 90 ? ' Only minor optimization opportunities remain.' : ' Focus on resolving the high-impact issues below.'}
-          </p>
-          <div className="grid grid-cols-3 gap-3 pt-3 border-t border-white/[0.06]">
+        <div className="border border-white/10 bg-gradient-to-b from-zinc-950 to-black p-5 flex flex-col gap-3 h-full">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-extrabold text-white uppercase tracking-tight flex items-center gap-2">
+              <span className="w-1 h-4 bg-[#FF5500] flex-shrink-0"></span>
+              Executive Summary
+            </h2>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              This website demonstrates {report.overallScore >= 90 ? 'excellent' : report.overallScore >= 75 ? 'good' : 'suboptimal'} technical health.
+              {report.overallScore >= 90 ? ' Only minor optimization opportunities remain.' : ' Focus on resolving the high-impact issues below.'}
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-3 pt-3 border-t border-white/[0.06] mt-2">
             <div>
               <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Verdict</p>
               <p className={`text-sm font-bold ${
@@ -992,7 +994,7 @@ function AuditResultsContent() {
         </div>
 
         {/* Website Preview — Browser Chrome with Desktop/Mobile tabs */}
-        <div className="lg:col-span-3 browser-preview-card group">
+        <div className="browser-preview-card group w-full h-full flex flex-col">
           {/* Browser Title Bar with Desktop/Mobile toggle */}
           <div className="flex items-center justify-between px-3 py-2 bg-zinc-900/80 border-b border-white/10">
             <div className="flex items-center gap-1.5">
@@ -1049,23 +1051,28 @@ function AuditResultsContent() {
             href={`https://${report.url}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="block relative bg-black overflow-hidden flex items-center justify-center cursor-pointer"
-            style={{ aspectRatio: previewMode === 'desktop' ? '16 / 10' : '9 / 16', maxHeight: previewMode === 'mobile' ? '360px' : undefined }}
+            className="relative bg-black overflow-hidden flex items-center justify-center cursor-pointer p-0 mx-auto flex-1 w-full"
+            style={{ 
+              minHeight: previewMode === 'desktop' ? '220px' : '300px', 
+              maxHeight: previewMode === 'mobile' ? '400px' : undefined,
+              width: previewMode === 'mobile' ? 'auto' : '100%'
+            }}
           >
-            {report.screenshotUrl ? (
+            {(previewMode === 'desktop' && report.desktopScreenshotUrl) || report.screenshotUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={report.screenshotUrl}
+                src={previewMode === 'desktop' && report.desktopScreenshotUrl ? report.desktopScreenshotUrl : report.screenshotUrl}
                 alt={`Preview of ${report.url}`}
                 onLoad={(e) => {
                   const img = e.currentTarget;
-                  console.log(`[Screenshot Debug] Source Resolution: ${img.naturalWidth}x${img.naturalHeight}px`);
+                  console.log(`[Screenshot Debug] Mode: ${previewMode}`);
+                  console.log(`[Screenshot Debug] Desktop URL: ${report.desktopScreenshotUrl ? report.desktopScreenshotUrl.substring(0, 50) + '...' : 'Unavailable'}`);
+                  console.log(`[Screenshot Debug] Mobile URL: ${report.screenshotUrl ? report.screenshotUrl.substring(0, 50) + '...' : 'Unavailable'}`);
+                  console.log(`[Screenshot Debug] Source Resolution (${previewMode}): ${img.naturalWidth}x${img.naturalHeight}px`);
                   console.log(`[Screenshot Debug] Rendered Resolution: ${img.width}x${img.height}px`);
                   console.log(`[Screenshot Debug] Provider: Google PageSpeed Insights ('final-screenshot')`);
                 }}
-                className={`w-full h-full transition-transform duration-700 ease-out group-hover:scale-[1.03] ${
-                  previewMode === 'mobile' ? 'object-contain' : 'object-cover object-top'
-                }`}
+                className="w-auto h-auto max-w-full max-h-full transition-transform duration-700 ease-out group-hover:scale-[1.03] object-contain"
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-2 py-12">
