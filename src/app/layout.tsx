@@ -27,12 +27,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark scroll-smooth scroll-pt-14`}
       style={{ colorScheme: 'dark' }}
     >
-      <body className="min-h-full flex flex-col bg-black text-white selection:bg-[#FF5500]/30 selection:text-[#FF5500]">
+      <body className="min-h-full flex flex-col bg-[#050505] text-[#9CA3AF] selection:bg-[#00E66A]/30 selection:text-[#00E66A]">
         <Header />
-        <main className="flex-grow flex flex-col">
+        <main className="flex-grow flex flex-col pt-14">
           {children}
         </main>
         <Footer />

@@ -124,13 +124,13 @@ function GeminiComparisonSection({
     return (
       <div className="mt-16 border-t border-white/20 pt-8">
         <div className="flex items-center gap-3 mb-8">
-          <Sparkles className="h-5 w-5 text-[#FF5500]" />
+          <Sparkles className="h-5 w-5 text-[#00E66A]" />
           <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">AI Comparison</h2>
-          <span className="text-[10px] font-mono text-[#FF5500] border border-[#FF5500]/30 px-2 py-0.5 uppercase tracking-widest">Gemini 2.5 Flash</span>
+          <span className="text-[10px] font-mono text-[#00E66A] border border-[#00E66A]/30 px-2 py-0.5 uppercase tracking-widest">Gemini 2.5 Flash</span>
         </div>
-        <div className="border border-white/20 p-8 bg-black">
+        <div className="border border-white/20 p-8 bg-[#050505]">
           <div className="flex items-center gap-4 mb-6">
-            <div className="h-3 w-3 bg-[#FF5500] animate-pulse"></div>
+            <div className="h-3 w-3 bg-[#00E66A] animate-pulse"></div>
             <p className="text-sm font-mono text-zinc-400 uppercase tracking-widest">Generating comparative analysis...</p>
           </div>
           <div className="space-y-3">
@@ -153,9 +153,9 @@ function GeminiComparisonSection({
           <Sparkles className="h-5 w-5 text-zinc-600" />
           <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">AI Comparison</h2>
         </div>
-        <div className="border border-[#FF5500]/30 p-6 bg-[#FF5500]/5">
+        <div className="border border-[#00E66A]/30 p-6 bg-[#00E66A]/5">
           <div className="flex items-center gap-3 mb-3">
-            <AlertTriangle className="h-4 w-4 text-[#FF5500]" />
+            <AlertTriangle className="h-4 w-4 text-[#00E66A]" />
             <h4 className="text-sm font-bold text-white uppercase tracking-widest">Comparison Unavailable</h4>
           </div>
           <p className="text-xs font-mono text-zinc-400 leading-relaxed">{error}</p>
@@ -169,13 +169,13 @@ function GeminiComparisonSection({
   return (
     <div className="mt-16 border-t border-white/20 pt-8">
       <div className="flex items-center gap-3 mb-8">
-        <Sparkles className="h-5 w-5 text-[#FF5500]" />
+        <Sparkles className="h-5 w-5 text-[#00E66A]" />
         <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight">AI Comparison</h2>
-        <span className="text-[10px] font-mono text-[#FF5500] border border-[#FF5500]/30 px-2 py-0.5 uppercase tracking-widest">Gemini 2.5 Flash</span>
+        <span className="text-[10px] font-mono text-[#00E66A] border border-[#00E66A]/30 px-2 py-0.5 uppercase tracking-widest">Gemini 2.5 Flash</span>
       </div>
 
       {/* Executive Summary */}
-      <div className="border border-white/20 p-6 bg-black mb-6">
+      <div className="border border-white/20 p-6 bg-[#050505] mb-6">
         <h3 className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Executive Summary</h3>
         <p className="text-sm text-zinc-200 leading-relaxed font-light">{comparison.executiveSummary}</p>
       </div>
@@ -207,12 +207,12 @@ function GeminiComparisonSection({
       </div>
 
       {/* Key Differences */}
-      <div className="border border-[#f97316]/20 p-6 bg-[#f97316]/5 mb-6">
-        <h3 className="text-[10px] font-mono text-[#f97316] uppercase tracking-widest mb-4">Key Differences</h3>
+      <div className="border border-[#fbbf24]/20 p-6 bg-[#fbbf24]/5 mb-6">
+        <h3 className="text-[10px] font-mono text-[#fbbf24] uppercase tracking-widest mb-4">Key Differences</h3>
         <ul className="space-y-3">
           {comparison.keyDifferences.map((d, i) => (
             <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-300 leading-relaxed">
-              <span className="text-[#f97316] font-bold flex-shrink-0">{i + 1}.</span>
+              <span className="text-[#fbbf24] font-bold flex-shrink-0">{i + 1}.</span>
               {d}
             </li>
           ))}
@@ -220,12 +220,12 @@ function GeminiComparisonSection({
       </div>
 
       {/* Recommendations */}
-      <div className="border border-white/20 p-6 bg-black">
-        <h3 className="text-[10px] font-mono text-[#FF5500] uppercase tracking-widest mb-4">Recommendations</h3>
+      <div className="border border-white/20 p-6 bg-[#050505]">
+        <h3 className="text-[10px] font-mono text-[#00E66A] uppercase tracking-widest mb-4">Recommendations</h3>
         <ul className="space-y-3">
           {comparison.recommendations.map((r, i) => (
             <li key={i} className="flex items-start gap-3 text-xs font-mono text-zinc-300 leading-relaxed">
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#FF5500] mt-0.5 flex-shrink-0" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#00E66A] mt-0.5 flex-shrink-0" />
               {r}
             </li>
           ))}
@@ -244,7 +244,7 @@ function GeminiComparisonSection({
 // ---------------------------------------------------------------------------
 function getScoreColor(score: number, bg = false) {
   if (score >= 90) return bg ? 'bg-[#22c55e]' : 'text-[#22c55e]';
-  if (score >= 50) return bg ? 'bg-[#f97316]' : 'text-[#f97316]';
+  if (score >= 50) return bg ? 'bg-[#fbbf24]' : 'text-[#fbbf24]';
   return bg ? 'bg-[#ef4444]' : 'text-[#ef4444]';
 }
 
@@ -393,9 +393,9 @@ function CompareContent() {
   // Missing parameters - show form instead of error
   if (!rawA || !rawB) {
     return (
-      <div className="flex flex-col flex-grow items-center justify-center px-4 py-24 bg-black min-h-[70vh]">
-        <div className="max-w-xl w-full p-8 border border-white/20 bg-black">
-          <GitCompareArrows className="h-8 w-8 text-[#FF5500] mb-4" />
+      <div className="flex flex-col flex-grow items-center justify-center px-4 py-24 bg-[#050505] min-h-[70vh]">
+        <div className="max-w-xl w-full p-8 border border-white/20 bg-[#050505]">
+          <GitCompareArrows className="h-8 w-8 text-[#00E66A] mb-4" />
           <h2 className="text-xl font-bold text-white uppercase tracking-widest mb-2">Compare Websites</h2>
           <p className="text-xs text-zinc-400 font-mono mb-8">Enter two URLs to run a side-by-side performance audit.</p>
           
@@ -403,7 +403,7 @@ function CompareContent() {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-12 flex-shrink-0">Site A</span>
-                <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+                <div className="flex-1 flex items-center px-4 gap-3 bg-[#050505] border border-white/20 focus-within:border-[#00E66A] transition-colors">
                   <Globe className="h-5 w-5 text-zinc-500" />
                   <input
                     type="text"
@@ -416,7 +416,7 @@ function CompareContent() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest w-12 flex-shrink-0">Site B</span>
-                <div className="flex-1 flex items-center px-4 gap-3 bg-black border border-white/20 focus-within:border-[#FF5500] transition-colors">
+                <div className="flex-1 flex items-center px-4 gap-3 bg-[#050505] border border-white/20 focus-within:border-[#00E66A] transition-colors">
                   <Globe className="h-5 w-5 text-zinc-500" />
                   <input
                     type="text"
@@ -431,15 +431,15 @@ function CompareContent() {
             
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm mt-4"
+              className="w-full flex items-center justify-center gap-2 bg-[#00E66A] hover:bg-[#00c55a] text-white font-bold px-8 py-4 transition-colors uppercase tracking-wider text-sm mt-4"
             >
               Compare
               <ArrowRight className="h-4 w-4" />
             </button>
             
             {formError && (
-              <p className="mt-3 text-sm text-[#FF5500] text-left font-mono flex items-center gap-2">
-                <span className="h-1 w-1 bg-[#FF5500]"></span> {formError}
+              <p className="mt-3 text-sm text-[#00E66A] text-left font-mono flex items-center gap-2">
+                <span className="h-1 w-1 bg-[#00E66A]"></span> {formError}
               </p>
             )}
           </form>
@@ -451,24 +451,24 @@ function CompareContent() {
   // Loading state
   if (loading && !reportA && !reportB) {
     return (
-      <div className="relative flex flex-col flex-grow items-center justify-center px-4 py-24 bg-black min-h-[70vh]">
+      <div className="relative flex flex-col flex-grow items-center justify-center px-4 py-24 bg-[#050505] min-h-[70vh]">
         <div className="absolute inset-0 grid-bg-sharp opacity-30 pointer-events-none"></div>
         <div className="max-w-4xl w-full relative z-10">
           <h2 className="text-2xl font-extrabold text-white uppercase tracking-tight mb-2 text-center">
             Dual Analysis
           </h2>
-          <p className="text-xs text-[#FF5500] font-mono text-center mb-8">
+          <p className="text-xs text-[#00E66A] font-mono text-center mb-8">
             Auditing both sites concurrently
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 border border-white/20">
             {[{ url: rawA, step: loadingStepA }, { url: rawB, step: loadingStepB }].map((site, idx) => (
-              <div key={idx} className={`p-6 bg-black ${idx === 0 ? 'md:border-r border-b md:border-b-0 border-white/20' : ''}`}>
+              <div key={idx} className={`p-6 bg-[#050505] ${idx === 0 ? 'md:border-r border-b md:border-b-0 border-white/20' : ''}`}>
                 <div className="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
                   <div>
                     <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Site {idx === 0 ? 'A' : 'B'}</span>
                     <p className="text-sm text-white font-mono mt-1">{site.url}</p>
                   </div>
-                  <div className="h-3 w-3 bg-[#FF5500] animate-pulse"></div>
+                  <div className="h-3 w-3 bg-[#00E66A] animate-pulse"></div>
                 </div>
                 <div className="space-y-2 font-mono text-xs">
                   {loadingSteps.map((s, si) => {
@@ -494,19 +494,27 @@ function CompareContent() {
   // Both failed
   if (errorA && errorB) {
     return (
-      <div className="flex flex-col flex-grow items-center justify-center px-4 py-24 bg-black min-h-[70vh]">
-        <div className="max-w-xl w-full p-8 border border-[#FF5500]/50 bg-black">
-          <AlertTriangle className="h-8 w-8 text-[#FF5500] mb-4" />
-          <h2 className="text-lg font-bold text-white uppercase tracking-widest mb-4">Both Audits Failed</h2>
+      <div className="flex flex-col flex-grow items-center justify-center px-4 py-24 bg-[#050505] min-h-[70vh]">
+        <div className="max-w-xl w-full p-8 border border-[#00E66A]/50 bg-[#050505]">
+          <AlertTriangle className="h-8 w-8 text-[#00E66A] mb-4" />
+          <h2 className="text-lg font-bold text-white uppercase tracking-widest mb-4">Unable to Analyze Websites</h2>
           <div className="space-y-3 mb-6">
-            <div className="border border-white/10 p-3">
-              <span className="text-[10px] font-mono text-zinc-500">SITE A: {rawA}</span>
-              <p className="text-xs text-[#FF5500] font-mono mt-1">{errorA}</p>
+            <div className="border border-white/10 p-4 bg-[#050505]">
+              <span className="text-[10px] font-mono text-zinc-500 mb-1 block">SITE A: {rawA}</span>
+              <p className="text-xs text-[#00E66A] font-mono leading-relaxed">{errorA}</p>
             </div>
-            <div className="border border-white/10 p-3">
-              <span className="text-[10px] font-mono text-zinc-500">SITE B: {rawB}</span>
-              <p className="text-xs text-[#FF5500] font-mono mt-1">{errorB}</p>
+            <div className="border border-white/10 p-4 bg-[#050505]">
+              <span className="text-[10px] font-mono text-zinc-500 mb-1 block">SITE B: {rawB}</span>
+              <p className="text-xs text-[#00E66A] font-mono leading-relaxed">{errorB}</p>
             </div>
+          </div>
+          <div className="pt-4 border-t border-[#00E66A]/20 mb-6">
+            <span className="text-[10px] font-mono text-[#00E66A] uppercase tracking-widest mb-2 block">Possible Reasons:</span>
+            <ul className="text-xs text-zinc-300 font-mono space-y-1.5 list-disc pl-4">
+              <li>URLs are invalid or malformed.</li>
+              <li>Sites are blocking automated requests.</li>
+              <li>A temporary API issue with Google PageSpeed Insights.</li>
+            </ul>
           </div>
           <div className="flex gap-3">
             <Link href="/" className="flex-1 text-center py-3 border border-white/20 text-xs font-mono text-white uppercase tracking-widest hover:border-white/50">
@@ -514,7 +522,7 @@ function CompareContent() {
             </Link>
             <button
               onClick={() => router.push(`/compare?a=${encodeURIComponent(rawA)}&b=${encodeURIComponent(rawB)}&r=${Date.now()}`)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#FF5500] text-xs font-mono text-white uppercase tracking-widest"
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#00E66A] text-xs font-mono text-white uppercase tracking-widest"
             >
               <RefreshCw className="h-4 w-4" /> Retry
             </button>
@@ -539,7 +547,7 @@ function CompareContent() {
   const overallWinner = reportA && reportB ? computeWinner(reportA.overallScore, reportB.overallScore) : null;
 
   return (
-    <div className="mx-auto max-w-7xl w-full px-4 py-12 sm:px-6 lg:px-8 flex-grow bg-black">
+    <div className="mx-auto max-w-7xl w-full px-4 py-12 sm:px-6 lg:px-8 flex-grow bg-[#050505]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between pb-8 border-b border-white/20 gap-4">
         <div>
@@ -549,7 +557,7 @@ function CompareContent() {
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tighter text-white uppercase">
             Comparison Report
           </h1>
-          <p className="text-xs text-[#FF5500] font-mono mt-2">
+          <p className="text-xs text-[#00E66A] font-mono mt-2">
             {rawA} vs {rawB} &bull; {reportA?.date || reportB?.date || 'N/A'}
           </p>
         </div>
@@ -559,7 +567,7 @@ function CompareContent() {
               id="export-compare-pdf-btn"
               onClick={handleExportPdf}
               disabled={pdfLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-[#FF5500] hover:bg-[#E64C00] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-white transition-colors uppercase"
+              className="flex items-center gap-2 px-4 py-2 bg-[#00E66A] hover:bg-[#00c55a] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-mono text-white transition-colors uppercase"
             >
               {pdfLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
               {pdfLoading ? 'Generating...' : 'Export PDF'}
@@ -567,7 +575,7 @@ function CompareContent() {
           )}
           <button
             onClick={() => router.push(`/compare?a=${encodeURIComponent(rawA)}&b=${encodeURIComponent(rawB)}&r=${Date.now()}`)}
-            className="flex items-center gap-2 px-4 py-2 border border-white/20 hover:border-[#FF5500] hover:text-[#FF5500] text-xs font-mono text-white transition-colors uppercase"
+            className="flex items-center gap-2 px-4 py-2 border border-white/20 hover:border-[#00E66A] hover:text-[#00E66A] text-xs font-mono text-white transition-colors uppercase"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Re-execute
           </button>
@@ -575,7 +583,7 @@ function CompareContent() {
       </div>
 
       {pdfError && (
-        <div className="mt-4 flex items-center gap-3 border border-[#FF5500]/30 bg-[#FF5500]/5 px-4 py-2 text-xs font-mono text-[#FF5500]">
+        <div className="mt-4 flex items-center gap-3 border border-[#00E66A]/30 bg-[#00E66A]/5 px-4 py-2 text-xs font-mono text-[#00E66A]">
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
           PDF export failed: {pdfError}
         </div>
@@ -583,9 +591,9 @@ function CompareContent() {
 
       {/* Partial failure banner */}
       {(errorA || errorB) && (
-        <div className="mt-6 border border-[#FF5500]/30 bg-[#FF5500]/5 p-4">
+        <div className="mt-6 border border-[#00E66A]/30 bg-[#00E66A]/5 p-4">
           <div className="flex items-center gap-3 mb-2">
-            <AlertTriangle className="h-4 w-4 text-[#FF5500]" />
+            <AlertTriangle className="h-4 w-4 text-[#00E66A]" />
             <h4 className="text-sm font-bold text-white uppercase tracking-widest">Partial Failure</h4>
           </div>
           <p className="text-xs font-mono text-zinc-400">
@@ -594,10 +602,32 @@ function CompareContent() {
         </div>
       )}
 
+      {/* Overall Winner Card */}
+      {overallWinner && reportA && reportB && (
+        <div className="mt-8 mb-4 border-2 border-[#00E66A]/50 bg-[#00E66A]/5 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-[#00E66A]"></div>
+          <div>
+            <h3 className="text-[10px] font-mono text-[#00E66A] uppercase tracking-widest mb-2">Overall Recommendation</h3>
+            <div className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-white">
+              {overallWinner.winner === 'tie' ? 'It\'s a Tie' : `Choose Site ${overallWinner.winner.toUpperCase()}`}
+            </div>
+            <p className="text-sm font-mono text-zinc-400 mt-2">
+              {overallWinner.winner === 'a' ? rawA : overallWinner.winner === 'b' ? rawB : 'Both sites perform similarly'}
+            </p>
+          </div>
+          {overallWinner.winner !== 'tie' && (
+            <div className="flex flex-col items-end text-right">
+              <span className="text-5xl font-black text-[#22c55e]">+{overallWinner.delta}</span>
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mt-1">Point Advantage</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Overall Score Face-Off */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-0 border border-white/20">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-0 border border-white/20">
         {/* Site A */}
-        <div className={`p-8 md:p-12 flex flex-col items-center justify-center text-center bg-black ${!reportA ? 'opacity-30' : ''} ${overallWinner?.winner === 'b' ? 'opacity-50' : ''}`}>
+        <div className={`p-8 md:p-12 flex flex-col items-center justify-center text-center bg-[#050505] ${!reportA ? 'opacity-30' : ''} ${overallWinner?.winner === 'b' ? 'opacity-50' : ''}`}>
           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Site A</span>
           <span className="text-xs text-white font-mono mb-4">{rawA}</span>
           <div className={`text-[100px] leading-none font-black tracking-tighter ${reportA ? getScoreColor(reportA.overallScore) : 'text-zinc-700'}`}>
@@ -612,15 +642,15 @@ function CompareContent() {
         </div>
 
         {/* VS */}
-        <div className="hidden md:flex flex-col items-center justify-center bg-black border-x border-white/20 px-6">
+        <div className="hidden md:flex flex-col items-center justify-center bg-[#050505] border-x border-white/20 px-6">
           <span className="text-2xl font-black text-zinc-600">VS</span>
         </div>
-        <div className="md:hidden flex flex-col items-center justify-center bg-black border-y border-white/20 py-3">
+        <div className="md:hidden flex flex-col items-center justify-center bg-[#050505] border-y border-white/20 py-3">
           <span className="text-lg font-black text-zinc-600">VS</span>
         </div>
 
         {/* Site B */}
-        <div className={`p-8 md:p-12 flex flex-col items-center justify-center text-center bg-black ${!reportB ? 'opacity-30' : ''} ${overallWinner?.winner === 'a' ? 'opacity-50' : ''}`}>
+        <div className={`p-8 md:p-12 flex flex-col items-center justify-center text-center bg-[#050505] ${!reportB ? 'opacity-30' : ''} ${overallWinner?.winner === 'a' ? 'opacity-50' : ''}`}>
           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Site B</span>
           <span className="text-xs text-white font-mono mb-4">{rawB}</span>
           <div className={`text-[100px] leading-none font-black tracking-tighter ${reportB ? getScoreColor(reportB.overallScore) : 'text-zinc-700'}`}>
@@ -660,7 +690,7 @@ function CompareContent() {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.15, duration: 0.5 }}
                   key={cat.key} 
-                  className="border border-white/20 p-6 bg-black"
+                  className="border border-white/20 p-6 bg-[#050505]"
                 >
                   <div className="flex items-center justify-center gap-3 mb-2">
                     <span className="text-white">{cat.icon}</span>
@@ -724,7 +754,7 @@ function CompareContent() {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, duration: 0.4 }}
                   key={key} 
-                  className="border border-white/20 p-4 bg-black flex flex-col sm:flex-row sm:items-center gap-4"
+                  className="border border-white/20 p-4 bg-[#050505] flex flex-col sm:flex-row sm:items-center gap-4"
                 >
                   <div className="sm:w-1/4 text-center sm:text-left">
                     <span className="text-sm font-bold text-white uppercase">{ma.label}</span>
@@ -773,7 +803,7 @@ export default function ComparePage() {
       fallback={
         <div className="flex flex-col flex-grow items-center justify-center bg-black min-h-[70vh] text-white">
           <div className="flex flex-col items-center gap-4">
-            <div className="h-4 w-4 bg-[#FF5500] animate-pulse"></div>
+            <div className="h-4 w-4 bg-[#00E66A] animate-pulse"></div>
             <p className="text-xs text-zinc-500 font-mono uppercase tracking-widest">Initializing comparison...</p>
           </div>
         </div>

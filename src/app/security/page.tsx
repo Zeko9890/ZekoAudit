@@ -4,14 +4,14 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export default function SecurityPage() {
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-24 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#050505] text-white px-4 pt-32 pb-24 sm:px-6 lg:px-8 max-w-[900px] mx-auto">
       <Link href="/" className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-white transition-colors uppercase mb-12">
         <ArrowLeft className="h-4 w-4" /> Back to System
       </Link>
       
       <div>
         <div className="flex items-center gap-4 mb-6">
-          <ShieldCheck className="h-10 w-10 text-[#FF5500]" />
+          <ShieldCheck className="h-10 w-10 text-[#00E66A]" />
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tighter uppercase text-white">
             Security Overview
           </h1>
@@ -20,7 +20,7 @@ export default function SecurityPage() {
           Transparency is critical. Learn exactly how ZekoAudit processes, transmits, and secures your data.
         </p>
 
-        <div className="border-l-2 border-[#FF5500] pl-6 py-2 space-y-12">
+        <div className="border-l-2 border-[#00E66A] pl-6 py-2 space-y-12">
            
            <div>
              <h3 className="text-xl font-bold mb-3 uppercase tracking-wider text-white">How Audits Work</h3>
@@ -47,7 +47,7 @@ export default function SecurityPage() {
              <p className="text-zinc-400 leading-relaxed text-sm mb-4">
                For advanced features like the experimental Visual Audit or rate-limit overrides, you may be prompted to provide your own Google Gemini API key.
              </p>
-             <ul className="list-disc pl-5 text-sm text-zinc-400 space-y-2 marker:text-[#FF5500]">
+             <ul className="list-disc pl-5 text-sm text-zinc-400 space-y-2 marker:text-[#00E66A]">
                <li><strong>Storage:</strong> User API keys are stored strictly in your browser's local storage (`localStorage`).</li>
                <li><strong>Zero Backend Storage:</strong> Keys are never saved to our database.</li>
                <li><strong>Zero Logging:</strong> Keys are scrubbed from all server logs and error trackers.</li>

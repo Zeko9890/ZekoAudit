@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-24 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#050505] text-white px-4 pt-32 pb-24 sm:px-6 lg:px-8 max-w-[900px] mx-auto">
       <Link href="/" className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-white transition-colors uppercase mb-12">
         <ArrowLeft className="h-4 w-4" /> Back to System
       </Link>
@@ -17,7 +17,7 @@ export default function TermsPage() {
           Effective Date: {new Date().toLocaleDateString()}
         </p>
 
-        <div className="border-l-2 border-[#FF5500] pl-6 py-2 space-y-6">
+        <div className="border-l-2 border-[#00E66A] pl-6 py-2 space-y-6">
            <div>
              <h3 className="text-xl font-bold mb-2">Service Availability</h3>
              <p className="text-zinc-400 leading-relaxed text-sm">ZekoAudit relies on upstream APIs (Google PageSpeed Insights, Gemini) that may enforce rate limits or experience downtime. We do not guarantee 100% uptime or successful audits for every domain (e.g., sites blocking automated bots or sitting behind CAPTCHAs).</p>

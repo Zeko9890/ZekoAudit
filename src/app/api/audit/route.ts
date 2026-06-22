@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { AuditReport } from '@/types/audit';
 
 // ---------------------------------------------------------------------------
 // Solution descriptions mapped from Lighthouse audit IDs
@@ -63,7 +64,7 @@ function normalizeAndValidateUrl(raw: string): { url: string; error: string | nu
 // ---------------------------------------------------------------------------
 // Map raw PageSpeed / Lighthouse JSON → our AuditReport shape
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapLighthouseResponse(targetUrl: string, data: any) {
+function mapLighthouseResponse(targetUrl: string, data: any): AuditReport {
   const getCategoryScore = (catId: string): number => {
     const cat = data.lighthouseResult?.categories?.[catId];
     if (!cat || cat.score === null || cat.score === undefined) return 0;
@@ -116,7 +117,7 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
     { id: 'deprecations', category: 'best-practices', defaultTitle: 'Uses deprecated APIs' },
   ];
 
-  const recommendations: { id: string; title: string; description: string; impact: string; category: string; solution: string; improvement: string }[] = [];
+  const recommendations: { id: string; title: string; description: string; impact: 'critical' | 'high' | 'medium' | 'low' | 'passed'; category: 'performance' | 'accessibility' | 'seo' | 'bestPractices'; solution: string; improvement: string }[] = [];
   const auditItems = data.lighthouseResult?.audits || {};
 
   auditsToMap.forEach((item) => {
@@ -124,7 +125,11 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
     if (!audit || audit.score === null || audit.score === undefined) return;
 
     const score = audit.score as number;
-    const impact: 'high' | 'medium' | 'passed' = score >= 0.9 ? 'passed' : score < 0.5 ? 'high' : 'medium';
+    const impact: 'critical' | 'high' | 'medium' | 'low' | 'passed' = 
+      score >= 0.9 ? 'passed' : 
+      score >= 0.75 ? 'low' : 
+      score >= 0.5 ? 'medium' : 
+      score >= 0.25 ? 'high' : 'critical';
 
     let improvement = 'Passed';
     if (impact !== 'passed') {
@@ -138,8 +143,9 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
       : '';
 
     // Convert 'best-practices' → 'bestPractices' to match the frontend camelCase key
-    const categoryKey =
-      item.category === 'best-practices' ? 'bestPractices' : item.category;
+    const categoryKey = (
+      item.category === 'best-practices' ? 'bestPractices' : item.category
+    ) as 'performance' | 'accessibility' | 'seo' | 'bestPractices';
 
     recommendations.push({
       id: item.id,
@@ -164,9 +170,9 @@ function mapLighthouseResponse(targetUrl: string, data: any) {
     // ignore
   }
 
-  // Sort: high → medium → passed
+  // Sort: critical → high → medium → low → passed
   recommendations.sort((a, b) => {
-    const ranks: Record<string, number> = { high: 0, medium: 1, passed: 2 };
+    const ranks: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, passed: 4 };
     return ranks[a.impact] - ranks[b.impact];
   });
 

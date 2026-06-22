@@ -16,7 +16,7 @@ export interface Recommendation {
   id: string;
   title: string;
   description: string;
-  impact: 'high' | 'medium' | 'passed';
+  impact: 'critical' | 'high' | 'medium' | 'low' | 'passed';
   category: 'seo' | 'performance' | 'accessibility' | 'bestPractices';
   solution: string;
   improvement: string;

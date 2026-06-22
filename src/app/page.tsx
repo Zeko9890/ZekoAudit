@@ -1,607 +1,374 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
-  Globe, 
   ArrowRight, 
-  Zap, 
-  Shield,
-  SearchCode,
-  Accessibility,
-  GitCompareArrows,
-  FileText,
+  CheckCircle2, 
   Sparkles,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Cpu,
+  Zap,
+  ShieldCheck,
+  FileText,
+  Download,
+  Image as ImageIcon,
+  GitCompareArrows,
+  Accessibility
 } from 'lucide-react';
 
-function CountUp({ value, duration = 1.5, className = '' }: { value: number; duration?: number; className?: string }) {
-  const [count, setCount] = useState(0);
+// ─── Animation Variants ──────────────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (delay = 0) => ({
+    opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const, delay }
+  })
+};
 
-  React.useEffect(() => {
-    let start = 0;
-    const end = value;
-    if (start === end) {
-      setCount(end);
-      return;
-    }
-    let startTime: number;
-    let animationFrame: number;
+const staggerChildren = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
 
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
-      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setCount(Math.floor(easeProgress * end));
-      if (progress < 1) {
-        animationFrame = requestAnimationFrame(step);
-      } else {
-        setCount(end);
-      }
-    };
-    animationFrame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [value, duration]);
-
-  return <span className={className}>{count}</span>;
-}
-
-function AnimatedAuditPreview() {
-  const [step, setStep] = useState(0);
-
-  React.useEffect(() => {
-    const timer1 = setTimeout(() => setStep(1), 600);
-    const timer2 = setTimeout(() => setStep(2), 1200);
-    const timer3 = setTimeout(() => setStep(3), 1800);
-    return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
-  }, []);
-
+export default function Home() {
   return (
-    <div className="w-full bg-zinc-950 border border-white/10 p-6 sm:p-8 rounded-sm shadow-2xl relative overflow-hidden h-full flex flex-col justify-between min-h-[400px]">
-      <div className="absolute inset-0 grid-bg-sharp opacity-10 pointer-events-none"></div>
+    <div className="min-h-screen bg-[#050505] text-zinc-300 font-sans selection:bg-[#00E66A]/30 selection:text-[#00E66A] overflow-hidden">
       
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="h-2 w-2 bg-[#FF5500] rounded-full animate-ping"></div>
-          <span className="text-xs font-mono text-zinc-500 uppercase tracking-widest">Live Engine Simulation</span>
-        </div>
-        <span className="text-[10px] font-mono text-zinc-600 border border-white/10 px-2 py-0.5 rounded-sm bg-black/50">TARGET: zeko.dev</span>
-      </div>
-      
-      {/* Scores */}
-      <div className="grid grid-cols-2 gap-4 mb-8 relative z-10">
-        <div className="border border-white/5 bg-black p-6 flex flex-col items-center justify-center transition-all">
-           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Performance</span>
-           {step >= 1 ? (
-             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-5xl font-black text-[#22c55e] leading-none">
-               <CountUp value={98} />
-             </motion.div>
-           ) : <span className="text-5xl font-black text-zinc-800 leading-none">--</span>}
-        </div>
-        
-        <div className="border border-white/5 bg-black p-6 flex flex-col items-center justify-center transition-all">
-           <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">SEO</span>
-           {step >= 2 ? (
-             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-5xl font-black text-[#22c55e] leading-none">
-               <CountUp value={100} />
-             </motion.div>
-           ) : <span className="text-5xl font-black text-zinc-800 leading-none">--</span>}
-        </div>
+      {/* Background Texture & Gradients */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        {/* Faint grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+        {/* Subtle top-right glow */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#00E66A]/10 rounded-full blur-[150px] opacity-60"></div>
+        {/* Subtle center-left glow */}
+        <div className="absolute top-[30%] left-[-10%] w-[500px] h-[500px] bg-[#00E66A]/5 rounded-full blur-[150px] opacity-50"></div>
       </div>
 
-      {/* Progress Bars */}
-      <div className="space-y-6 relative z-10">
-        <div>
-          <div className="flex justify-between items-end mb-2">
-            <div className="flex flex-col">
-               <span className="text-[10px] font-mono text-zinc-500 uppercase">Core Web Vitals</span>
-               <span className="text-xs text-white font-bold">Largest Contentful Paint</span>
-            </div>
-            {step >= 1 ? <span className="text-xs font-mono text-[#22c55e]">1.2s</span> : <span className="text-xs font-mono text-zinc-700">--</span>}
-          </div>
-          <div className="h-1.5 w-full bg-white/5 overflow-hidden">
+      {/* ── HERO SECTION ── */}
+      <section className="relative z-10 w-full max-w-[1200px] mx-auto px-4 pt-20 pb-16 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Left Column: Copy */}
+          <div className="flex flex-col items-start z-10">
             <motion.div 
-              initial={{ width: 0 }} 
-              animate={{ width: step >= 1 ? "85%" : 0 }} 
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="h-full bg-[#22c55e]"
-            ></motion.div>
+              initial="hidden" animate="visible" custom={0} variants={fadeUp}
+              className="inline-flex items-center gap-2 px-3 py-1 bg-[#00E66A]/5 border border-[#00E66A]/20 rounded-full mb-6 shadow-[0_0_15px_rgba(0,230,106,0.05)]"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#00E66A]" />
+              <span className="text-[11px] font-semibold tracking-wider text-[#00E66A] uppercase">AI-Powered Website Analysis</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial="hidden" animate="visible" custom={0.1} variants={fadeUp}
+              className="text-5xl lg:text-7xl font-extrabold text-white tracking-tighter leading-[1.05] mb-6"
+            >
+              Audit. Optimize.<br/>Ship with <span className="text-[#00E66A]">Confidence.</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial="hidden" animate="visible" custom={0.2} variants={fadeUp}
+              className="text-lg text-[#9CA3AF] max-w-lg mb-10 leading-relaxed font-light"
+            >
+              Run Lighthouse diagnostics, AI-powered analysis, visual audits, competitor benchmarking, and generate professional PDF reports in seconds.
+            </motion.p>
+            
+            <motion.div 
+              initial="hidden" animate="visible" custom={0.3} variants={fadeUp}
+              className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-10"
+            >
+              <Link
+                href="/audit"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#00E66A] hover:bg-[#00c55a] text-black px-8 py-3.5 rounded-md font-bold transition-all duration-300 shadow-[0_0_25px_rgba(0,230,106,0.25)] hover:shadow-[0_0_35px_rgba(0,230,106,0.4)]"
+              >
+                Run Free Audit <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/examples"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-transparent hover:bg-white/5 border border-white/20 text-white px-8 py-3.5 rounded-md font-semibold transition-all duration-300"
+              >
+                View Sample Report
+              </Link>
+            </motion.div>
+
+            {/* Checkmarks */}
+            <motion.div 
+              initial="hidden" animate="visible" custom={0.4} variants={fadeUp}
+              className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] font-medium text-[#9CA3AF]"
+            >
+              {['Instant Results', 'PDF Reports', 'Visual Audit', 'Privacy Focused'].map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#00E66A]" /> {item}
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Right Column: Premium Mockup */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.2 }}
+            className="w-full relative z-10 lg:ml-8"
+          >
+            {/* The Glass Mockup Container */}
+            <div className="bg-[#0A0A0A]/80 backdrop-blur-md border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden relative group hover:border-[#00E66A]/20 transition-colors duration-500">
+              
+              {/* Inner ambient glow behind the mockup */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#00E66A]/10 rounded-full blur-[100px] pointer-events-none transition-opacity duration-500 group-hover:opacity-100 opacity-60" />
+
+              {/* Mockup Header (Window controls) */}
+              <div className="flex items-center px-4 py-3 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                </div>
+              </div>
+
+              {/* Mockup Body */}
+              <div className="p-6 sm:p-8">
+                <div className="flex justify-between items-start mb-10 relative z-10">
+                  <div>
+                    <div className="text-[#9CA3AF] text-[13px] font-medium mb-1">Overall Score</div>
+                    <div className="text-5xl font-bold text-[#00E66A] font-mono tracking-tighter drop-shadow-[0_0_15px_rgba(0,230,106,0.3)]">98</div>
+                    <div className="text-[11px] text-[#00E66A] font-semibold mt-1 tracking-wider uppercase">Excellent</div>
+                  </div>
+                </div>
+
+                {/* Radar / Circular UI */}
+                <div className="relative w-full flex items-center justify-center py-6 mb-8">
+                  {/* Concentric Rings */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                     <svg width="280" height="280" viewBox="0 0 280 280" className="opacity-20">
+                       <circle cx="140" cy="140" r="90" stroke="white" strokeWidth="1" strokeDasharray="4 4" fill="none" />
+                       <circle cx="140" cy="140" r="130" stroke="white" strokeWidth="1" strokeDasharray="2 6" fill="none" />
+                     </svg>
+                  </div>
+
+                  {/* Pulsing Shield Center */}
+                  <motion.div 
+                    animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    className="relative flex items-center justify-center w-28 h-28 rounded-full border-2 border-[#00E66A]/60 shadow-[0_0_40px_rgba(0,230,106,0.2)] z-10 bg-black/60 backdrop-blur-md"
+                  >
+                    <div className="absolute inset-0 rounded-full border border-[#00E66A]/30 animate-ping" style={{ animationDuration: '3s' }}></div>
+                    <ActivityIcon className="w-10 h-10 text-[#00E66A]" />
+                  </motion.div>
+
+                  {/* Floating Metrics */}
+                  <div className="absolute top-[10%] left-[10%] text-center">
+                    <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider font-semibold mb-0.5">Performance</div>
+                    <div className="text-xl font-bold text-[#00E66A] font-mono">98</div>
+                  </div>
+                  <div className="absolute top-[15%] right-[5%] text-center">
+                    <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider font-semibold mb-0.5">Accessibility</div>
+                    <div className="text-xl font-bold text-[#00E66A] font-mono">100</div>
+                  </div>
+                  <div className="absolute bottom-[15%] left-[5%] text-center">
+                    <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider font-semibold mb-0.5">Best Practices</div>
+                    <div className="text-xl font-bold text-[#00E66A] font-mono">100</div>
+                  </div>
+                  <div className="absolute bottom-[10%] right-[10%] text-center">
+                    <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider font-semibold mb-0.5">SEO</div>
+                    <div className="text-xl font-bold text-[#00E66A] font-mono">92</div>
+                  </div>
+                </div>
+
+                {/* Bottom Bar inside Mockup */}
+                <div className="bg-[#050505] border border-white/10 rounded-lg p-3.5 flex items-center justify-between gap-4 relative z-10 shadow-inner">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-[#9CA3AF] font-medium mb-1">Generated Report</span>
+                    <div className="flex items-center gap-2 text-xs text-white">
+                      <FileText className="w-3.5 h-3.5 text-[#00E66A]" /> zeko.dev-audit-report.pdf
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors cursor-pointer">
+                    Download PDF <Download className="w-3 h-3" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* ── LOGOS SECTION ── */}
+      <section className="w-full border-y border-white/[0.04] py-12 relative z-10 bg-black/40">
+        <div className="max-w-[1200px] mx-auto px-4 flex flex-col items-center">
+          <div className="text-[11px] text-[#9CA3AF] font-semibold mb-8 uppercase tracking-widest text-center">
+            Trusted by developers and teams
+          </div>
+          
+          {/* Centered Logo Viewport (~3 logos wide) */}
+          <div className="w-full max-w-3xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]">
+            {/* Ambient Marquee with opacity breathing */}
+            <div className="flex w-max animate-ambient-marquee hover:[animation-play-state:paused] opacity-60">
+              <div className="flex w-max animate-ambient-pulse">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-10 md:gap-16 px-5 md:px-8">
+                    <div className="font-bold text-xl flex items-center tracking-tighter text-white">Next.js</div>
+                    <div className="font-bold text-xl flex items-center gap-1.5 text-white">⚛ React</div>
+                    <div className="font-bold text-xl flex items-center tracking-tight text-white">▲ Vercel</div>
+                    <div className="font-bold text-xl flex items-center tracking-tight text-white">🔥 Firebase</div>
+                    <div className="font-bold text-xl flex items-center tracking-tight text-white">⬢ Node.js</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div>
-          <div className="flex justify-between items-end mb-2">
-            <div className="flex flex-col">
-               <span className="text-[10px] font-mono text-zinc-500 uppercase">Accessibility</span>
-               <span className="text-xs text-white font-bold">WCAG 2.1 AA</span>
+      </section>
+
+      {/* ── FEATURES SECTION ── */}
+      <section id="features" className="relative z-10 w-full max-w-[1200px] mx-auto px-4 py-24 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">Everything you need in one audit</h2>
+          <p className="text-[#9CA3AF] text-sm md:text-base max-w-2xl mx-auto">Comprehensive analysis. Actionable insights. Real impact.</p>
+        </div>
+
+        <motion.div 
+          initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={staggerChildren}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+        >
+          {/* Feature 1 */}
+          <motion.div variants={fadeUp} className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-white/[0.05] p-6 rounded-xl hover:border-[#00E66A]/20 transition-all duration-300 group hover:-translate-y-1 shadow-lg hover:shadow-[0_10px_30px_rgba(0,230,106,0.05)]">
+            <div className="w-10 h-10 bg-white/5 group-hover:bg-[#00E66A]/10 rounded-lg flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#00E66A]/20 transition-colors">
+              <Zap className="w-5 h-5 text-white group-hover:text-[#00E66A] transition-colors" />
             </div>
-            {step >= 3 ? <span className="text-xs font-mono text-[#22c55e]">100%</span> : <span className="text-xs font-mono text-zinc-700">--</span>}
-          </div>
-          <div className="h-1.5 w-full bg-white/5 overflow-hidden">
+            <h3 className="text-white font-semibold text-[15px] mb-2">Lighthouse Analysis</h3>
+            <p className="text-[#9CA3AF] text-[13px] leading-relaxed">Get instant results using the industry-standard engine for Performance, SEO, and Best Practices.</p>
+          </motion.div>
+
+          {/* Feature 2 */}
+          <motion.div variants={fadeUp} className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-white/[0.05] p-6 rounded-xl hover:border-[#00E66A]/20 transition-all duration-300 group hover:-translate-y-1 shadow-lg hover:shadow-[0_10px_30px_rgba(0,230,106,0.05)]">
+            <div className="w-10 h-10 bg-white/5 group-hover:bg-[#00E66A]/10 rounded-lg flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#00E66A]/20 transition-colors">
+              <Sparkles className="w-5 h-5 text-white group-hover:text-[#00E66A] transition-colors" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">AI Recommendations</h3>
+            <p className="text-[#9CA3AF] text-[13px] leading-relaxed">Smart recommendations generated by Gemini tailored to your exact site architecture and stack.</p>
+          </motion.div>
+
+          {/* Feature 3 */}
+          <motion.div variants={fadeUp} className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-white/[0.05] p-6 rounded-xl hover:border-[#00E66A]/20 transition-all duration-300 group hover:-translate-y-1 shadow-lg hover:shadow-[0_10px_30px_rgba(0,230,106,0.05)]">
+            <div className="w-10 h-10 bg-white/5 group-hover:bg-[#00E66A]/10 rounded-lg flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#00E66A]/20 transition-colors">
+              <ImageIcon className="w-5 h-5 text-white group-hover:text-[#00E66A] transition-colors" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">Visual Audit Screenshots</h3>
+            <p className="text-[#9CA3AF] text-[13px] leading-relaxed">Automatic generation of full-page desktop and mobile layouts for visual verification.</p>
+          </motion.div>
+
+          {/* Feature 4 */}
+          <motion.div variants={fadeUp} className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-white/[0.05] p-6 rounded-xl hover:border-[#00E66A]/20 transition-all duration-300 group hover:-translate-y-1 shadow-lg hover:shadow-[0_10px_30px_rgba(0,230,106,0.05)]">
+            <div className="w-10 h-10 bg-white/5 group-hover:bg-[#00E66A]/10 rounded-lg flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#00E66A]/20 transition-colors">
+              <GitCompareArrows className="w-5 h-5 text-white group-hover:text-[#00E66A] transition-colors" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">Competitor Comparison</h3>
+            <p className="text-[#9CA3AF] text-[13px] leading-relaxed">Run side-by-side audits against competitors or compare staging environments against production.</p>
+          </motion.div>
+
+          {/* Feature 5 */}
+          <motion.div variants={fadeUp} className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-white/[0.05] p-6 rounded-xl hover:border-[#00E66A]/20 transition-all duration-300 group hover:-translate-y-1 shadow-lg hover:shadow-[0_10px_30px_rgba(0,230,106,0.05)]">
+            <div className="w-10 h-10 bg-white/5 group-hover:bg-[#00E66A]/10 rounded-lg flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#00E66A]/20 transition-colors">
+              <FileText className="w-5 h-5 text-white group-hover:text-[#00E66A] transition-colors" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">PDF Reports</h3>
+            <p className="text-[#9CA3AF] text-[13px] leading-relaxed">Download professional, client-ready PDF reports highlighting key metrics and technical solutions.</p>
+          </motion.div>
+
+          {/* Feature 6 */}
+          <motion.div variants={fadeUp} className="bg-[#0A0A0A]/60 backdrop-blur-sm border border-white/[0.05] p-6 rounded-xl hover:border-[#00E66A]/20 transition-all duration-300 group hover:-translate-y-1 shadow-lg hover:shadow-[0_10px_30px_rgba(0,230,106,0.05)]">
+            <div className="w-10 h-10 bg-white/5 group-hover:bg-[#00E66A]/10 rounded-lg flex items-center justify-center mb-5 border border-white/5 group-hover:border-[#00E66A]/20 transition-colors">
+              <Accessibility className="w-5 h-5 text-white group-hover:text-[#00E66A] transition-colors" />
+            </div>
+            <h3 className="text-white font-semibold text-[15px] mb-2">Accessibility Testing</h3>
+            <p className="text-[#9CA3AF] text-[13px] leading-relaxed">Ensure your web apps comply with accessibility guidelines and deliver an inclusive user experience.</p>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ── REPORT PREVIEW SECTION ── */}
+      <section className="relative z-10 w-full border-t border-white/[0.04] bg-[#050505]">
+        <div className="max-w-[1200px] mx-auto px-4 py-24 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            
+            {/* Left: Text */}
+            <div className="flex-1 text-center lg:text-left">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 tracking-tight">Professional Insights.<br/>Actionable Data.</h2>
+              <p className="text-[#9CA3AF] text-base leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0">
+                Dive deep into the metrics that matter. Our detailed reports break down every performance bottleneck, SEO issue, and accessibility flaw into clear, engineering-grade tasks.
+              </p>
+              <div className="flex flex-col gap-4 max-w-md mx-auto lg:mx-0">
+                <div className="flex items-center gap-3 text-sm text-[#9CA3AF]">
+                  <CheckCircle2 className="w-5 h-5 text-[#00E66A]" /> Complete score breakdown by category
+                </div>
+                <div className="flex items-center gap-3 text-sm text-[#9CA3AF]">
+                  <CheckCircle2 className="w-5 h-5 text-[#00E66A]" /> AI-generated recommendation cards
+                </div>
+                <div className="flex items-center gap-3 text-sm text-[#9CA3AF]">
+                  <CheckCircle2 className="w-5 h-5 text-[#00E66A]" /> Executive summary and PDF exports
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Realistic Report Preview Mockup */}
             <motion.div 
-              initial={{ width: 0 }} 
-              animate={{ width: step >= 3 ? "100%" : 0 }} 
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="h-full bg-[#22c55e]"
-            ></motion.div>
+              initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+              className="flex-1 w-full relative"
+            >
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl relative">
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-[#00E66A]/5 rounded-full blur-[100px] pointer-events-none" />
+                
+                <div className="border-b border-white/5 bg-white/[0.02] px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center border border-white/10">
+                      <ShieldCheck className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">example.com</div>
+                      <div className="text-[10px] text-[#9CA3AF]">Audited 2 minutes ago</div>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-[#00E66A]/10 border border-[#00E66A]/20 text-[#00E66A] text-[10px] font-bold uppercase tracking-wider rounded">Excellent</div>
+                </div>
+                
+                <div className="p-6 space-y-6 relative z-10">
+                  {/* Score breakdown row */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { l: 'Perf', s: 98 }, { l: 'A11y', s: 100 }, { l: 'Best', s: 100 }, { l: 'SEO', s: 92 }
+                    ].map(m => (
+                      <div key={m.l} className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+                        <div className="text-2xl font-bold text-[#00E66A] font-mono">{m.s}</div>
+                        <div className="text-[10px] text-[#9CA3AF] uppercase mt-1">{m.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* AI Recommendation mock */}
+                  <div className="bg-[#050505] border border-white/5 rounded-lg p-4">
+                     <div className="flex items-center justify-between mb-3">
+                       <span className="text-[11px] font-semibold text-white uppercase tracking-wide">Top Recommendation</span>
+                       <span className="text-[10px] font-medium text-red-400 bg-red-400/10 px-2 py-0.5 rounded">High Impact</span>
+                     </div>
+                     <h4 className="text-sm font-semibold text-white mb-1">Defer unused CSS</h4>
+                     <p className="text-xs text-[#9CA3AF] leading-relaxed">Split `globals.css` into critical and non-critical paths. Currently 45KB of unused CSS is blocking the initial render.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
           </div>
         </div>
-      </div>
+      </section>
+
     </div>
   );
 }
 
-const FAQS = [
-  {
-    question: "How is ZekoAudit different from standard Lighthouse?",
-    answer: "While we use the same reliable engine, ZekoAudit layers on AI-driven recommendations, side-by-side comparisons, and professional PDF reporting tailored for agencies and engineers."
-  },
-  {
-    question: "Can I export the audit reports for clients?",
-    answer: "Yes, every audit can be exported as a presentation-ready PDF document that you can hand straight to clients, stakeholders, or your engineering team."
-  },
-  {
-    question: "Does it check for Accessibility (A11y)?",
-    answer: "Absolutely. We run comprehensive WCAG 2.1 AA checks including contrast ratios, semantic HTML, and keyboard navigability."
-  },
-  {
-    question: "How does the comparison feature work?",
-    answer: "You can input two different URLs (e.g., your site vs a competitor) and we will generate a side-by-side benchmark showing where you win and where you lose."
-  }
-];
-
-export default function Home() {
-  const [url, setUrl] = useState('');
-  const [urlB, setUrlB] = useState('');
-  const [error, setError] = useState('');
-  const [mode, setMode] = useState<'single' | 'compare'>('single');
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const router = useRouter();
-
-  const handleAnalyze = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = url.trim();
-    if (!trimmed) {
-      setError('Please enter a valid website URL');
-      return;
-    }
-    router.push(`/audit?url=${encodeURIComponent(trimmed.toLowerCase())}`);
-  };
-
-  const handleCompare = (e: React.FormEvent) => {
-    e.preventDefault();
-    const a = url.trim();
-    const b = urlB.trim();
-    if (!a || !b) {
-      setError('Please enter both website URLs');
-      return;
-    }
-    if (a.toLowerCase() === b.toLowerCase()) {
-      setError('Please enter two different URLs');
-      return;
-    }
-    router.push(`/compare?a=${encodeURIComponent(a.toLowerCase())}&b=${encodeURIComponent(b.toLowerCase())}`);
-  };
-
-  const fadeUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } }
-  };
-
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-  };
-
+// Inline Activity Icon (similar to a pulse)
+function ActivityIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <div className="relative isolate flex flex-col items-center w-full bg-black overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[#FF5500]/5 rounded-full blur-[120px] pointer-events-none -z-10 translate-x-1/3 -translate-y-1/3"></div>
-
-      {/* Asymmetric Hero Section */}
-      <section id="analyze" className="w-full max-w-7xl px-4 pt-24 pb-32 sm:px-6 lg:px-8 sm:pt-32">
-        <div className="flex flex-col lg:flex-row items-start gap-16 lg:gap-8">
-          
-          {/* Left: Huge Title & Animated Preview */}
-          <motion.div 
-            initial="hidden" 
-            animate="visible" 
-            variants={staggerContainer} 
-            className="w-full lg:w-7/12 pt-0 lg:pt-8 order-2 lg:order-1 flex flex-col gap-12 lg:pr-8"
-          >
-            <div>
-              <motion.div variants={fadeUp} className="inline-flex items-center space-x-2 border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] sm:text-xs text-zinc-300 mb-8 uppercase tracking-widest font-mono backdrop-blur-sm rounded-sm">
-                <span className="w-2 h-2 bg-[#FF5500] animate-pulse rounded-full"></span>
-                <span>Engineering-Grade Web Audits</span>
-              </motion.div>
-              
-              <motion.h1 variants={fadeUp} className="text-5xl sm:text-7xl lg:text-[5.5rem] font-extrabold tracking-tighter text-white leading-[1.05] mb-8">
-                PRECISION <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF5500] to-orange-400">AUDITS.</span><br/>
-                MAXIMUM<br/>
-                VELOCITY.
-              </motion.h1>
-
-              <motion.p variants={fadeUp} className="text-lg sm:text-xl text-zinc-400 font-light max-w-md leading-relaxed border-l-2 border-[#FF5500] pl-6">
-                Professional audits powered by Google PageSpeed Insights. Actionable AI insights, automated PDF reporting, and competitor benchmarking.
-              </motion.p>
-            </div>
-
-            <motion.div variants={fadeUp} className="w-full relative">
-               <AnimatedAuditPreview />
-            </motion.div>
-          </motion.div>
-
-          {/* Right: Audit Form (Primary Focus) */}
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="w-full lg:w-5/12 relative order-1 lg:order-2 lg:sticky lg:top-32 z-10"
-          >
-            <div className="absolute -inset-4 bg-gradient-to-b from-[#FF5500]/20 to-transparent blur-2xl opacity-50 -z-10 rounded-full"></div>
-            <motion.div 
-              whileHover={{ y: -5, boxShadow: "0 25px 50px -12px rgba(255, 85, 0, 0.15)" }}
-              className="bg-zinc-950 border border-white/10 p-8 sm:p-10 rounded-sm shadow-2xl relative overflow-hidden"
-            >
-              {/* Subtle grid bg inside card */}
-              <div className="absolute inset-0 grid-bg-sharp opacity-20 pointer-events-none"></div>
-
-              {/* Tabs */}
-              <div className="flex items-center gap-6 border-b border-white/10 mb-8 pb-4 relative z-10">
-                <button
-                  onClick={() => { setMode('single'); setError(''); }}
-                  className={`text-xs font-mono uppercase tracking-widest transition-colors flex items-center gap-2 ${
-                    mode === 'single' ? 'text-[#FF5500] font-bold' : 'text-zinc-500 hover:text-white'
-                  }`}
-                >
-                  <Globe className="h-4 w-4" /> Single Audit
-                </button>
-                <button
-                  onClick={() => { setMode('compare'); setError(''); }}
-                  className={`text-xs font-mono uppercase tracking-widest transition-colors flex items-center gap-2 ${
-                    mode === 'compare' ? 'text-[#FF5500] font-bold' : 'text-zinc-500 hover:text-white'
-                  }`}
-                >
-                  <GitCompareArrows className="h-4 w-4" /> Compare
-                </button>
-              </div>
-
-              {/* Forms */}
-              <div className="relative z-10 min-h-[220px]">
-                {mode === 'single' && (
-                  <form onSubmit={handleAnalyze} className="space-y-6">
-                    <div>
-                      <label htmlFor="url-input" className="block text-[10px] font-mono text-zinc-500 uppercase tracking-widest mb-3">Target URL</label>
-                      <div className="flex items-center px-4 gap-3 bg-black border border-white/10 focus-within:border-[#FF5500]/50 transition-colors rounded-sm">
-                        <Globe className="h-5 w-5 text-zinc-600" />
-                        <input
-                          id="url-input"
-                          type="text"
-                          value={url}
-                          onChange={(e) => { setUrl(e.target.value); if (error) setError(''); }}
-                          placeholder="e.g., stripe.com"
-                          className="w-full bg-transparent py-4 text-white placeholder-zinc-700 focus:outline-none text-base font-mono"
-                        />
-                      </div>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      type="submit"
-                      className="w-full flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 uppercase tracking-wider text-sm rounded-sm"
-                    >
-                      Run Diagnostics <ArrowRight className="h-4 w-4" />
-                    </motion.button>
-                  </form>
-                )}
-
-                {mode === 'compare' && (
-                  <form onSubmit={handleCompare} className="space-y-5">
-                    <div>
-                      <div className="flex items-center px-4 gap-3 bg-black border border-white/10 focus-within:border-[#FF5500]/50 transition-colors rounded-sm">
-                        <span className="text-[10px] font-mono text-zinc-500 w-4">A</span>
-                        <input
-                          type="text" value={url} onChange={(e) => { setUrl(e.target.value); if (error) setError(''); }}
-                          placeholder="e.g., stripe.com" className="w-full bg-transparent py-3 text-white placeholder-zinc-700 focus:outline-none text-sm font-mono"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center px-4 gap-3 bg-black border border-white/10 focus-within:border-[#FF5500]/50 transition-colors rounded-sm mt-2">
-                        <span className="text-[10px] font-mono text-zinc-500 w-4">B</span>
-                        <input
-                          type="text" value={urlB} onChange={(e) => { setUrlB(e.target.value); if (error) setError(''); }}
-                          placeholder="e.g., linear.app" className="w-full bg-transparent py-3 text-white placeholder-zinc-700 focus:outline-none text-sm font-mono"
-                        />
-                      </div>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      type="submit"
-                      className="w-full flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-8 py-4 uppercase tracking-wider text-sm mt-6 rounded-sm"
-                    >
-                      <GitCompareArrows className="h-4 w-4" /> Execute Comparison
-                    </motion.button>
-                  </form>
-                )}
-
-                {error && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -bottom-8 left-0 text-sm text-[#FF5500] font-mono flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#FF5500]"></span> {error}
-                  </motion.p>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Asymmetric Workflow Section */}
-      <section id="how-it-works" className="w-full bg-zinc-950 py-32 border-y border-white/5 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeUp}
-            className="mb-20 pl-4 border-l-4 border-[#FF5500]"
-          >
-            <h2 className="text-xs text-zinc-500 font-mono uppercase tracking-widest mb-2">Workflow Engine</h2>
-            <h3 className="text-4xl font-extrabold text-white tracking-tight sm:text-5xl">
-              From URL to Actionable<br/>Insights in Seconds
-            </h3>
-          </motion.div>
-
-          {/* Staggered diagonal layout for steps */}
-          <div className="relative">
-             {/* Decorative diagonal line for desktop */}
-             <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-white/20 to-transparent transform rotate-[5deg] origin-left pointer-events-none"></div>
-             
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-4 lg:gap-8">
-               {[
-                 { step: '01', title: 'Target', desc: 'Enter any public URL. No authentication required.', icon: Globe, offset: 'md:mt-0' },
-                 { step: '02', title: 'Process', desc: 'Our engine runs a real-time Lighthouse diagnostic.', icon: Cpu, offset: 'md:mt-12' },
-                 { step: '03', title: 'Analyze', desc: 'AI reviews the metrics to generate human-readable fixes.', icon: Sparkles, offset: 'md:mt-24' },
-                 { step: '04', title: 'Export', desc: 'Download a clean PDF report to share with your team.', icon: FileText, offset: 'md:mt-36' },
-               ].map((item, idx) => (
-                 <motion.div 
-                   key={idx}
-                   initial={{ opacity: 0, y: 50 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ duration: 0.6, delay: idx * 0.15 }}
-                   className={`relative group flex flex-col ${item.offset}`}
-                 >
-                   <div className="w-16 h-16 rounded-sm bg-black border border-white/10 flex items-center justify-center mb-6 group-hover:border-[#FF5500] group-hover:bg-[#FF5500]/5 transition-colors shadow-2xl relative z-10">
-                     <item.icon className="w-6 h-6 text-zinc-400 group-hover:text-[#FF5500] transition-colors" />
-                   </div>
-                   <div className="text-[10px] font-mono text-[#FF5500] mb-3">STEP {item.step}</div>
-                   <h4 className="text-xl font-bold text-white mb-3">{item.title}</h4>
-                   <p className="text-sm text-zinc-400 font-light leading-relaxed max-w-[200px]">{item.desc}</p>
-                 </motion.div>
-               ))}
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Asymmetric Split */}
-      <section id="features" className="w-full max-w-7xl px-4 py-32 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-16 lg:gap-24 items-start">
-          <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
-            className="lg:w-1/3 sticky top-32"
-          >
-            <h2 className="text-xs text-zinc-500 font-mono uppercase tracking-widest mb-4">
-              / CORE VECTORS
-            </h2>
-            <h3 className="text-4xl font-extrabold text-white tracking-tight mb-6">
-              Deep Inspection Metrics
-            </h3>
-            <p className="text-zinc-400 font-light leading-relaxed mb-8 border-l-2 border-[#FF5500] pl-4">
-              Our platform utilizes a multi-threaded approach to extract, analyze, and validate over 100 specific metrics mapped to current web standards.
-            </p>
-            <div className="hidden lg:block w-full h-48 bg-zinc-950 border border-white/5 rounded-sm relative overflow-hidden mt-12 group">
-              <div className="absolute inset-0 bg-gradient-to-tr from-black to-zinc-900/50"></div>
-              <motion.div 
-                animate={{ rotate: 360 }} 
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                className="absolute -right-12 -bottom-12 w-48 h-48 border border-white/10 rounded-full border-dashed"
-              ></motion.div>
-              <div className="absolute top-6 left-6 text-[#FF5500]">
-                 <SearchCode className="w-8 h-8 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </div>
-          </motion.div>
-          
-          <div className="lg:w-2/3 w-full">
-            <div className="grid grid-cols-1 gap-6">
-              {[
-                { icon: Zap, title: 'Performance Core', desc: 'Measures the loading speed and visual responsiveness via Lighthouse Core Web Vitals analysis.', tags: ['LCP', 'FID', 'CLS'] },
-                { icon: SearchCode, title: 'Search Analytics', desc: 'Verifies whether your page is correctly configured to be indexed by major search engines.', tags: ['Meta Tags', 'Robots.txt', 'Structured Data'] },
-                { icon: Accessibility, title: 'A11y Compliance', desc: 'Evaluates screen reader support, keyboard navigability, and visual readability (WCAG 2.1 AA).', tags: ['Contrast', 'ARIA Attributes', 'Navigation'] },
-                { icon: Shield, title: 'Best Practices', desc: 'Assesses security protocols, network transmission standards, and code delivery safety.', tags: ['HTTPS', 'CSP', 'Trust & Safety'] },
-              ].map((spec, idx) => (
-                <motion.div 
-                  key={idx}
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  whileHover={{ scale: 1.01, backgroundColor: "rgba(255,255,255,0.03)" }}
-                  className="p-8 border border-white/10 bg-black rounded-sm group transition-all relative overflow-hidden"
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FF5500] scale-y-0 group-hover:scale-y-100 transition-transform origin-top"></div>
-                  <div className="flex flex-col sm:flex-row gap-6 items-start">
-                    <div className="w-12 h-12 rounded-sm bg-zinc-900/50 flex items-center justify-center shrink-0">
-                       <spec.icon className="h-5 w-5 text-[#FF5500]" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white tracking-wide mb-3">{spec.title}</h3>
-                      <p className="text-sm text-zinc-400 font-light mb-5 leading-relaxed">{spec.desc}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {spec.tags.map(tag => (
-                          <span key={tag} className="text-[10px] font-mono text-zinc-500 bg-black border border-white/10 px-2.5 py-1 uppercase rounded-sm">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Value Proposition Asymmetric Block */}
-      <section id="why" className="w-full bg-zinc-950 py-32 border-y border-white/5 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-           
-           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-             
-             {/* Image/Abstract block spans 5 cols */}
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-               whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-               viewport={{ once: true }}
-               transition={{ duration: 0.8 }}
-               className="md:col-span-5 relative h-[500px] border border-white/10 bg-black p-8 flex flex-col justify-between group"
-             >
-                <div className="absolute inset-0 bg-gradient-to-br from-[#FF5500]/5 to-transparent"></div>
-                <div className="relative z-10 flex justify-between">
-                  <div className="w-16 h-1 bg-white/20"></div>
-                  <div className="w-16 h-1 bg-white/20"></div>
-                </div>
-                
-                <div className="relative z-10 grid grid-cols-2 gap-4">
-                  <motion.div whileHover={{ y: -5 }} className="bg-zinc-900 border border-white/5 p-4 shadow-xl">
-                    <div className="text-xs text-zinc-500 font-mono mb-2">RAW JSON</div>
-                    <div className="space-y-1 opacity-30">
-                       <div className="h-2 w-full bg-white rounded-full"></div>
-                       <div className="h-2 w-2/3 bg-white rounded-full"></div>
-                       <div className="h-2 w-4/5 bg-white rounded-full"></div>
-                       <div className="h-2 w-1/2 bg-white rounded-full"></div>
-                    </div>
-                  </motion.div>
-                  <motion.div whileHover={{ y: -5 }} className="bg-[#FF5500]/10 border border-[#FF5500]/30 p-4 shadow-xl translate-y-6">
-                    <div className="text-xs text-[#FF5500] font-mono mb-2 flex justify-between"><span>AI OUTPUT</span><Sparkles className="w-3 h-3"/></div>
-                    <p className="text-[9px] text-white font-mono leading-relaxed">Fix: Defer offscreen images in hero section. Expected impact: -1.2s LCP.</p>
-                  </motion.div>
-                </div>
-                
-                <div className="relative z-10 flex justify-between items-end">
-                  <div className="w-8 h-8 rounded-full border border-white/20"></div>
-                  <div className="text-4xl font-black text-white/5 group-hover:text-white/10 transition-colors">010</div>
-                </div>
-             </motion.div>
-
-             {/* Text block spans 7 cols, offset to the right */}
-             <motion.div 
-               initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
-               className="md:col-span-7 md:pl-12 lg:pl-20"
-             >
-                <motion.h3 variants={fadeUp} className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-8 leading-[1.1]">
-                  Stop guessing what <br/>Lighthouse scores mean.
-                </motion.h3>
-                <motion.p variants={fadeUp} className="text-zinc-400 font-light text-lg mb-12 leading-relaxed max-w-xl">
-                  Raw performance data is only useful if you know how to fix it. ZekoAudit bridges the gap between complex diagnostic output and actionable engineering tasks.
-                </motion.p>
-                
-                <div className="space-y-8">
-                  {[
-                    { title: 'AI-Powered Recommendations', desc: 'Get specific, context-aware suggestions on how to improve your metrics.' },
-                    { title: 'Executive Summaries', desc: 'Generate reports that make sense to non-technical stakeholders.' },
-                    { title: 'Historical Benchmarking', desc: 'Compare your site against competitors to see exactly where you stand.' }
-                  ].map((item, idx) => (
-                    <motion.div variants={fadeUp} key={idx} className="flex items-start gap-5">
-                      <div className="mt-1 bg-white/5 border border-white/10 w-8 h-8 rounded-sm flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-[#FF5500]" />
-                      </div>
-                      <div>
-                        <h4 className="text-white font-bold mb-2 text-lg">{item.title}</h4>
-                        <p className="text-sm text-zinc-500 font-light">{item.desc}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-             </motion.div>
-             
-           </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" className="w-full max-w-4xl mx-auto px-4 py-32 sm:px-6 lg:px-8">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="text-center mb-16">
-          <h2 className="text-xs text-zinc-500 font-mono uppercase tracking-widest mb-4">Support</h2>
-          <h3 className="text-4xl font-extrabold text-white tracking-tight">Frequently Asked Questions</h3>
-        </motion.div>
-        <div className="space-y-4">
-          {FAQS.map((faq, idx) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              key={idx} 
-              className="bg-zinc-950 border border-white/10 rounded-sm overflow-hidden"
-            >
-              <button 
-                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                className="w-full flex items-center justify-between p-6 text-left hover:bg-white/[0.02] transition-colors"
-              >
-                <span className="text-lg font-bold text-white">{faq.question}</span>
-                <motion.div animate={{ rotate: openFaq === idx ? 180 : 0 }}>
-                  <ChevronDown className="w-5 h-5 text-zinc-500" />
-                </motion.div>
-              </button>
-              <motion.div 
-                initial={false}
-                animate={{ height: openFaq === idx ? 'auto' : 0, opacity: openFaq === idx ? 1 : 0 }}
-                className="overflow-hidden bg-black"
-              >
-                <div className="p-6 pt-0 text-zinc-400 font-light leading-relaxed border-t border-white/5 mt-2">
-                  {faq.answer}
-                </div>
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="w-full max-w-5xl mx-auto px-4 py-24 sm:px-6 lg:px-8 mb-12">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="relative bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-sm p-16 sm:p-24 text-center overflow-hidden shadow-2xl"
-        >
-          <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-[#FF5500]/20 blur-3xl rounded-full pointer-events-none"></div>
-          
-          <div className="relative z-10">
-            <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-8">
-              Ready to optimize?
-            </h2>
-            <p className="text-xl text-zinc-400 font-light max-w-2xl mx-auto mb-12">
-              Stop losing users to slow load times and poor accessibility. Run a free audit today and get actionable engineering tasks instantly.
-            </p>
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setMode('single'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="inline-flex items-center justify-center gap-2 bg-[#FF5500] hover:bg-[#E64C00] text-white font-bold px-12 py-6 uppercase tracking-wider text-sm rounded-sm shadow-[0_0_40px_rgba(255,85,0,0.3)]"
-            >
-              Start Free Audit Now
-              <ArrowRight className="h-5 w-5" />
-            </motion.button>
-          </div>
-        </motion.div>
-      </section>
-
-    </div>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.48 12H2"/>
+    </svg>
   );
 }

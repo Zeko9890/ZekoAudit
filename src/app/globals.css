@@ -6,16 +6,16 @@
   --color-zinc-800: #141414;
   --color-zinc-700: #1f1f1f;
   
-  --color-orange-500: #FF5500;
-  --color-orange-600: #E64C00;
+  --color-primary-500: #00E66A;
+  --color-primary-600: #00c55a;
 }
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #050505;
-  --card-border: #1f1f1f;
-  --accent-orange: #FF5500;
+  --background: #050505;
+  --foreground: #9CA3AF;
+  --card: #0A0A0A;
+  --card-border: rgba(255, 255, 255, 0.05);
+  --accent-primary: #00E66A;
 }
 
 body {
@@ -27,22 +27,22 @@ body {
 }
 
 ::selection {
-  background-color: rgba(255, 85, 0, 0.3);
+  background-color: rgba(0, 230, 106, 0.3);
   color: #ffffff;
 }
 
 /* Sharp UI Utilities */
 
 .sharp-border {
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sharp-border-b {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sharp-border-t {
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Minimalist Grid Pattern */
@@ -55,13 +55,15 @@ body {
 }
 
 /* Stark hover effects */
-.hover-sharp-orange {
-  transition: all 0.2s ease-out;
+.hover-sharp-primary {
+  transition: all 0.3s ease;
 }
 
-.hover-sharp-orange:hover {
-  border-color: var(--accent-orange);
-  background-color: rgba(255, 85, 0, 0.05);
+.hover-sharp-primary:hover {
+  border-color: rgba(0, 230, 106, 0.2);
+  background-color: rgba(0, 230, 106, 0.05);
+  box-shadow: 0 10px 30px rgba(0, 230, 106, 0.05);
+  transform: translateY(-2px);
 }
 
 /* Gradient Text (Monochrome/Sharp) */
@@ -83,41 +85,64 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #050505;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f1f1f;
-  border-radius: 0;
+  background: #141414;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF5500;
+  background: #1f1f1f;
 }
 
 /* Browser Preview Card */
 .browser-preview-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: #0a0a0a;
+  background-color: #0A0A0A;
   border-radius: 8px;
   overflow: hidden;
   transition:
-    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.35s ease,
-    border-color 0.35s ease;
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
   will-change: transform;
 }
 
 .browser-preview-card:hover {
   transform: scale(1.008);
-  border-color: rgba(255, 85, 0, 0.4);
+  border-color: rgba(0, 230, 106, 0.2);
   box-shadow:
-    0 0 24px rgba(255, 85, 0, 0.06),
+    0 0 24px rgba(0, 230, 106, 0.06),
     0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* Section Divider — gradient fade line */
 .section-divider-gradient {
   height: 1px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.12) 20%, rgba(255, 255, 255, 0.12) 80%, transparent);
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent);
+}
+
+/* Marquee Animations */
+@keyframes marquee-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes ambient-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.animate-ambient-marquee {
+  animation: marquee-left 80s linear infinite;
+}
+
+.animate-ambient-pulse {
+  animation: ambient-pulse 8s ease-in-out infinite;
 }

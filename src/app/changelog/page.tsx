@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-black text-white px-4 py-24 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#050505] text-white px-4 pt-32 pb-24 sm:px-6 lg:px-8 max-w-[900px] mx-auto">
       <Link href="/" className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-white transition-colors uppercase mb-12">
         <ArrowLeft className="h-4 w-4" /> Back to System
       </Link>
@@ -17,9 +17,9 @@ export default function ChangelogPage() {
           Recent updates and improvements to the ZekoAudit platform.
         </p>
 
-        <div className="border-l-2 border-[#FF5500] pl-6 py-2 space-y-8">
+        <div className="border-l-2 border-[#00E66A] pl-6 py-2 space-y-8">
            <div>
-             <h3 className="text-xl font-bold mb-2 flex items-center gap-4">v0.1.1 <span className="text-xs font-mono text-[#FF5500] border border-[#FF5500]/30 bg-[#FF5500]/10 px-2 py-1 rounded">Latest</span></h3>
+             <h3 className="text-xl font-bold mb-2 flex items-center gap-4">v0.1.1 <span className="text-xs font-mono text-[#00E66A] border border-[#00E66A]/30 bg-[#00E66A]/10 px-2 py-1 rounded">Latest</span></h3>
              <p className="text-zinc-400 leading-relaxed text-sm mb-4">Security, Compliance & API Quotas.</p>
              <ul className="list-disc pl-5 text-sm text-zinc-500 font-mono space-y-1">
                <li>Established Bring Your Own Key (BYOK) architecture to bypass global AI rate limits.</li>
